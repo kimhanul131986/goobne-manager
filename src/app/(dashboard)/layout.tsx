@@ -41,9 +41,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
+    let mounted = true
+
     // 1. 초기 세션 확인
     async function init() {
       const { data: { session } } = await supabase.auth.getSession()
+
+      if (!mounted) return
 
       if (!session) {
         router.replace('/login')
@@ -55,6 +59,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .select('name, role, stores(name)')
         .eq('id', session.user.id)
         .single()
+
+      if (!mounted) return
 
       if (data) {
         setProfile({
@@ -76,8 +82,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     })
 
-    return () => subscription.unsubscribe()
-  }, [router])
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleLogout() {
     await supabase.auth.signOut()
