@@ -43,39 +43,36 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     let mounted = true
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return
+    async function loadProfile() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!mounted || !session) return
 
-      if (event === 'INITIAL_SESSION') {
-        if (!session) {
-          router.replace('/login')
-          setAuthChecked(true)
-          return
+        const { data } = await supabase
+          .from('profiles')
+          .select('name, role, stores(name)')
+          .eq('id', session.user.id)
+          .single()
+
+        if (!mounted) return
+
+        if (data) {
+          setProfile({
+            name: data.name,
+            role: data.role,
+            storeName: (data.stores as any)?.name ?? '매장 미지정',
+          })
         }
-
-        try {
-          const { data } = await supabase
-            .from('profiles')
-            .select('name, role, stores(name)')
-            .eq('id', session.user.id)
-            .single()
-
-          if (!mounted) return
-
-          if (data) {
-            setProfile({
-              name: data.name,
-              role: data.role,
-              storeName: (data.stores as any)?.name ?? '매장 미지정',
-            })
-          }
-        } catch (e) {
-          console.error('profile fetch error', e)
-        } finally {
-          if (mounted) setAuthChecked(true)
-        }
+      } catch (e) {
+        console.error('profile fetch error', e)
+      } finally {
+        if (mounted) setAuthChecked(true)
       }
+    }
 
+    loadProfile()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
         router.replace('/login')
       }
