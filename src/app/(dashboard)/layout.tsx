@@ -248,6 +248,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [stores, setStores] = useState<StoreInfo[]>([])
+  const [initialStore, setInitialStore] = useState<StoreInfo | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
@@ -279,13 +280,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         if (!mounted) return
 
-        if (storeRows) {
+        if (storeRows && storeRows.length > 0) {
           const mapped: StoreInfo[] = storeRows.map((s: any) => ({
             id: s.id,
             name: s.name,
             theme: s.name.includes('홍대') ? 'red' : 'dark',
           }))
           setStores(mapped)
+
+          // localStorage에서 선택된 매장 복원, 없으면 첫 번째
+          let selected = mapped[0]
+          try {
+            const saved = localStorage.getItem('goobne_store')
+            if (saved) {
+              const parsed = JSON.parse(saved)
+              const found = mapped.find((s) => s.id === parsed.id)
+              if (found) selected = found
+            }
+          } catch {}
+          setInitialStore(selected)
+        } else if (profileData?.store_id) {
+          // stores 테이블 조회 실패 시 프로필의 store_id로 폴백
+          const fallback: StoreInfo = {
+            id: profileData.store_id,
+            name: '성산점',
+            theme: 'dark',
+          }
+          setStores([fallback])
+          setInitialStore(fallback)
         }
       } catch (e) {
         console.error('init error', e)
@@ -317,7 +339,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <StoreProvider stores={stores}>
+    <StoreProvider stores={stores} initialStore={initialStore}>
       <InnerLayout profile={profile} onLogout={handleLogout}>
         {children}
       </InnerLayout>

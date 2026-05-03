@@ -21,24 +21,18 @@ export const useStore = () => useContext(Ctx)
 export function StoreProvider({
   children,
   stores,
+  initialStore,
 }: {
   children: ReactNode
   stores: StoreInfo[]
+  initialStore: StoreInfo | null
 }) {
-  const [store, setStore] = useState<StoreInfo | null>(null)
+  // initialStore는 레이아웃에서 이미 결정된 값 → 첫 렌더부터 null이 아님
+  const [store, setStore] = useState<StoreInfo | null>(initialStore)
 
   useEffect(() => {
-    if (stores.length === 0) return
-    try {
-      const saved = localStorage.getItem('goobne_store')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        const found = stores.find((s) => s.id === parsed.id)
-        if (found) { setStore(found); return }
-      }
-    } catch {}
-    setStore(stores[0])
-  }, [stores])
+    if (!store && initialStore) setStore(initialStore)
+  }, [initialStore]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function switchStore(s: StoreInfo) {
     setStore(s)

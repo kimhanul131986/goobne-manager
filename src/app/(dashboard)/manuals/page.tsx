@@ -48,6 +48,7 @@ export default function ManualsPage() {
 
   useEffect(() => {
     if (!store) return
+    setLoading(true)
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }

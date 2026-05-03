@@ -69,6 +69,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!store) return
+    setLoading(true)
     async function fetchAll() {
       // 1. 유저 확인
       const { data: { user } } = await supabase.auth.getUser()

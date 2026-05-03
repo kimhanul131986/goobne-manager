@@ -153,6 +153,7 @@ export default function IncidentsPage() {
   // ── 초기 로드 ──
   useEffect(() => {
     if (!store) return
+    setLoading(true)
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }

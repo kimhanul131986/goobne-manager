@@ -54,6 +54,7 @@ export default function OrdersPage() {
   // ── 초기 데이터 로드 ──
   useEffect(() => {
     if (!store) return
+    setLoading(true)
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
