@@ -25,9 +25,9 @@ export default function NoticeDetailPage() {
 
   useEffect(() => {
     async function fetchNotice() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      const userId = session.user.id
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const userId = user.id
 
       // 공지 상세
       const { data, error } = await supabase

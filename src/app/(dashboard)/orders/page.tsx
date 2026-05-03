@@ -52,9 +52,9 @@ export default function OrdersPage() {
   // ── 초기 데이터 로드 ──
   useEffect(() => {
     async function load() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      const uid = session.user.id
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const uid = user.id
       setUserId(uid)
 
       const { data: profile } = await supabase

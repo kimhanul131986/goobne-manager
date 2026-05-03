@@ -221,14 +221,14 @@ export default function SchedulePage() {
   // ── 초기 로드 ──
   useEffect(() => {
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      setUserId(session.user.id)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      setUserId(user.id)
 
       const { data: profile } = await supabase
         .from('profiles')
         .select('role, store_id')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single()
 
       if (!profile) return

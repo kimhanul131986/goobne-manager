@@ -24,9 +24,9 @@ export default function NoticesPage() {
 
   useEffect(() => {
     async function fetchNotices() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      const userId = session.user.id
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const userId = user.id
 
       // 프로필 + 매장
       const { data: profile } = await supabase

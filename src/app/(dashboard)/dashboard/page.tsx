@@ -67,10 +67,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchAll() {
-      // 1. 세션
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      const userId = session.user.id
+      // 1. 유저 확인
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const userId = user.id
 
       // 2. 프로필 + 매장
       const { data: profile } = await supabase

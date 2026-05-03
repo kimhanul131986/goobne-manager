@@ -15,13 +15,13 @@ export default function NoticeNewPage() {
   // 역할 체크: staff 접근 불가
   useEffect(() => {
     async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single()
 
       if (!profile || profile.role === 'staff') {
@@ -41,9 +41,9 @@ export default function NoticeNewPage() {
     setSubmitting(true)
     setError(null)
 
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-    const userId = session.user.id
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const userId = user.id
 
     const { data: profile } = await supabase
       .from('profiles')
