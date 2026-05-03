@@ -89,27 +89,28 @@ function InnerLayout({ profile, onLogout, children }: {
         </div>
 
         {/* 매장 전환 버튼 */}
-        {stores.length > 1 && (
-          <div className={`px-3 py-2.5 border-b ${t.border} flex gap-1.5`}>
-            {stores.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => switchStore(s)}
-                className={`
-                  flex-1 text-xs font-bold py-1.5 rounded-lg transition-all
-                  ${store?.id === s.id
-                    ? s.theme === 'red'
-                      ? 'bg-[#E8001D] text-white'
-                      : 'bg-neutral-700 text-white'
-                    : 'text-neutral-500 hover:text-neutral-300'
-                  }
-                `}
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className={`px-3 py-2.5 border-b ${t.border} flex gap-1.5`}>
+          {stores.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => switchStore(s)}
+              className={`
+                flex-1 text-xs font-bold py-1.5 rounded-lg transition-all
+                ${store?.id === s.id
+                  ? s.theme === 'red'
+                    ? 'bg-[#E8001D] text-white'
+                    : 'bg-neutral-700 text-white'
+                  : 'text-neutral-500 hover:text-neutral-300'
+                }
+              `}
+            >
+              {s.name}
+            </button>
+          ))}
+          {stores.length === 0 && (
+            <span className="text-xs text-neutral-600">매장 로딩 중…</span>
+          )}
+        </div>
 
         {/* 현재 매장 */}
         <div className={`px-5 py-3 border-b ${t.border}`}>
@@ -159,7 +160,7 @@ function InnerLayout({ profile, onLogout, children }: {
         {/* 모바일 헤더 */}
         <header className={`md:hidden flex flex-col ${t.mobileBg} border-b ${t.border} sticky top-0 z-30`}>
           {/* 매장 전환 (모바일) */}
-          {stores.length > 1 && (
+          {stores.length > 0 && (
             <div className={`flex border-b ${t.border}`}>
               {stores.map((s) => (
                 <button
