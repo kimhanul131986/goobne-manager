@@ -41,31 +41,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
-    // onAuthStateChange: 세션 준비되면 즉시 실행
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!session) {
-          router.replace('/login')
-          return
-        }
+    // 1. 초기 세션 확인
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession()
 
-        const { data } = await supabase
-          .from('profiles')
-          .select('name, role, stores(name)')
-          .eq('id', session.user.id)
-          .single()
-
-        if (data) {
-          setProfile({
-            name: data.name,
-            role: data.role,
-            storeName: (data.stores as any)?.name ?? '매장 미지정',
-          })
-        }
-
-        setAuthChecked(true)
+      if (!session) {
+        router.replace('/login')
+        return
       }
-    )
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('name, role, stores(name)')
+        .eq('id', session.user.id)
+        .single()
+
+      if (data) {
+        setProfile({
+          name: data.name,
+          role: data.role,
+          storeName: (data.stores as any)?.name ?? '매장 미지정',
+        })
+      }
+
+      setAuthChecked(true)
+    }
+
+    init()
+
+    // 2. 로그아웃 감지만 별도로
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        router.replace('/login')
+      }
+    })
 
     return () => subscription.unsubscribe()
   }, [router])
