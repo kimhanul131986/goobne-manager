@@ -41,33 +41,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
-    async function init() {
-      const { data: { session } } = await supabase.auth.getSession()
+    // onAuthStateChange: 세션 준비되면 즉시 실행
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!session) {
+          router.replace('/login')
+          return
+        }
 
-      if (!session) {
-        router.replace('/login')
-        return
+        const { data } = await supabase
+          .from('profiles')
+          .select('name, role, stores(name)')
+          .eq('id', session.user.id)
+          .single()
+
+        if (data) {
+          setProfile({
+            name: data.name,
+            role: data.role,
+            storeName: (data.stores as any)?.name ?? '매장 미지정',
+          })
+        }
+
+        setAuthChecked(true)
       }
+    )
 
-      // profiles + stores 조인해서 유저 정보 가져오기
-      const { data } = await supabase
-        .from('profiles')
-        .select('name, role, stores(name)')
-        .eq('id', session.user.id)
-        .single()
-
-      if (data) {
-        setProfile({
-          name: data.name,
-          role: data.role,
-          storeName: (data.stores as any)?.name ?? '매장 미지정',
-        })
-      }
-
-      setAuthChecked(true)
-    }
-
-    init()
+    return () => subscription.unsubscribe()
   }, [router])
 
   async function handleLogout() {
