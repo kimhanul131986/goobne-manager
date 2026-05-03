@@ -24,7 +24,8 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/dashboard')
+    // router.push 대신 강제 페이지 이동으로 세션 쿠키 확실히 반영
+    window.location.href = '/dashboard'
   }
 
   return (
