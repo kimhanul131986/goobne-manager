@@ -9,14 +9,14 @@ import { supabase } from '@/lib/supabase'
 // 네비게이션 메뉴 정의
 // ──────────────────────────────────────────
 const NAV_ITEMS = [
-  { href: '/dashboard',            label: '홈',       icon: '🏠' },
-  { href: '/dashboard/notices',    label: '공지',     icon: '📢' },
-  { href: '/dashboard/orders',     label: '발주',     icon: '📦' },
-  { href: '/dashboard/schedule',   label: '스케줄',   icon: '📅' },
-  { href: '/dashboard/checklist',  label: '체크리스트', icon: '📋' },
-  { href: '/dashboard/manuals',    label: '매뉴얼',   icon: '📖' },
-  { href: '/dashboard/handover',   label: '인수인계', icon: '🔄' },
-  { href: '/dashboard/incidents',  label: '이슈신고', icon: '⚠️' },
+  { href: '/dashboard',   label: '홈',         icon: '🏠' },
+  { href: '/notices',     label: '공지',       icon: '📢' },
+  { href: '/orders',      label: '발주',       icon: '📦' },
+  { href: '/schedule',    label: '스케줄',     icon: '📅' },
+  { href: '/checklist',   label: '체크리스트', icon: '📋' },
+  { href: '/manuals',     label: '매뉴얼',     icon: '📖' },
+  { href: '/handover',    label: '인수인계',   icon: '🔄' },
+  { href: '/incidents',   label: '이슈신고',   icon: '⚠️' },
 ]
 
 // 탭바에는 공간이 좁아서 5개만 노출, 나머지는 사이드바에만 표시

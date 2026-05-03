@@ -25,7 +25,7 @@ export default function NoticeNewPage() {
         .single()
 
       if (!profile || profile.role === 'staff') {
-        router.replace('/dashboard/notices')
+        router.replace('/notices')
         return
       }
 
@@ -72,7 +72,7 @@ export default function NoticeNewPage() {
       return
     }
 
-    router.push('/dashboard/notices')
+    router.push('/notices')
   }
 
   if (!authChecked) {

@@ -206,7 +206,7 @@ export default function DashboardPage() {
 
         {/* 미확인 공지 */}
         <button
-          onClick={() => router.push('/dashboard/notices')}
+          onClick={() => router.push('/notices')}
           className="bg-neutral-900 hover:bg-neutral-800 active:scale-95 transition-all rounded-2xl p-5 border border-neutral-800 text-left"
         >
           <p className="text-xs text-neutral-500 mb-2">미확인 공지</p>
@@ -223,7 +223,7 @@ export default function DashboardPage() {
 
         {/* 미완료 체크리스트 */}
         <button
-          onClick={() => router.push('/dashboard/checklist')}
+          onClick={() => router.push('/checklist')}
           className="bg-neutral-900 hover:bg-neutral-800 active:scale-95 transition-all rounded-2xl p-5 border border-neutral-800 text-left"
         >
           <p className="text-xs text-neutral-500 mb-2">오늘 체크리스트</p>
@@ -240,7 +240,7 @@ export default function DashboardPage() {
 
         {/* 미해결 이슈 */}
         <button
-          onClick={() => router.push('/dashboard/incidents')}
+          onClick={() => router.push('/incidents')}
           className="bg-neutral-900 hover:bg-neutral-800 active:scale-95 transition-all rounded-2xl p-5 border border-neutral-800 text-left"
         >
           <p className="text-xs text-neutral-500 mb-2">미해결 이슈</p>
@@ -252,7 +252,7 @@ export default function DashboardPage() {
 
         {/* 오늘 스케줄 */}
         <button
-          onClick={() => router.push('/dashboard/schedule')}
+          onClick={() => router.push('/schedule')}
           className="bg-neutral-900 hover:bg-neutral-800 active:scale-95 transition-all rounded-2xl p-5 border border-neutral-800 text-left"
         >
           <p className="text-xs text-neutral-500 mb-2">오늘 내 스케줄</p>
@@ -273,7 +273,7 @@ export default function DashboardPage() {
 
       {/* 최근 인수인계 */}
       <button
-        onClick={() => router.push('/dashboard/handover')}
+        onClick={() => router.push('/handover')}
         className="w-full bg-neutral-900 hover:bg-neutral-800 active:scale-[0.99] transition-all rounded-2xl p-5 border border-neutral-800 text-left mb-3"
       >
         <div className="flex items-center justify-between mb-2">
@@ -308,8 +308,8 @@ export default function DashboardPage() {
           {[
             { href: '/dashboard/orders',  icon: '📦', label: '발주' },
             { href: '/dashboard/manuals', icon: '📖', label: '매뉴얼' },
-            { href: '/dashboard/handover', icon: '🔄', label: '인수인계' },
-            { href: '/dashboard/incidents', icon: '⚠️', label: '이슈신고' },
+            { href: '/handover', icon: '🔄', label: '인수인계' },
+            { href: '/incidents', icon: '⚠️', label: '이슈신고' },
           ].map((item) => (
             <button
               key={item.href}
