@@ -45,13 +45,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     async function loadProfile() {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!mounted || !session) return
+        // getUser()는 Supabase API에 직접 검증 → 캐시 문제 없음
+        const { data: { user }, error } = await supabase.auth.getUser()
+
+        if (!mounted) return
+
+        if (error || !user) {
+          router.replace('/login')
+          return
+        }
 
         const { data } = await supabase
           .from('profiles')
           .select('name, role, stores(name)')
-          .eq('id', session.user.id)
+          .eq('id', user.id)
           .single()
 
         if (!mounted) return
@@ -65,6 +72,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
       } catch (e) {
         console.error('profile fetch error', e)
+        if (mounted) router.replace('/login')
       } finally {
         if (mounted) setAuthChecked(true)
       }
