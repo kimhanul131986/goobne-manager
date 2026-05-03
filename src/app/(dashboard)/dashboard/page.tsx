@@ -69,7 +69,7 @@ export default function DashboardPage() {
     async function fetchAll() {
       // 1. 세션
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.replace('/login'); return }
+      if (!session) return
       const userId = session.user.id
 
       // 2. 프로필 + 매장
@@ -79,7 +79,7 @@ export default function DashboardPage() {
         .eq('id', userId)
         .single()
 
-      if (!profile) { router.replace('/login'); return }
+      if (!profile) return
 
       const storeId: string = profile.store_id
       const storeName: string = (profile.stores as any)?.name ?? '매장 미지정'

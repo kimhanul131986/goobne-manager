@@ -60,7 +60,7 @@ export default function ManualDetailPage() {
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.replace('/login'); return }
+      if (!session) return
       setUserId(session.user.id)
 
       const { data: profile } = await supabase

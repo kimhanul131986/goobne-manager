@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 // ──────────────────────────────────────────
@@ -131,8 +130,6 @@ function IncidentCard({ item, isAdmin, currentUserId, onResolve, onDelete }: Car
 // 페이지
 // ──────────────────────────────────────────
 export default function IncidentsPage() {
-  const router = useRouter()
-
   // 유저
   const [userId, setUserId]   = useState('')
   const [storeId, setStoreId] = useState('')
@@ -154,7 +151,7 @@ export default function IncidentsPage() {
   useEffect(() => {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.replace('/login'); return }
+      if (!session) return
       const uid = session.user.id
       setUserId(uid)
 
@@ -164,7 +161,7 @@ export default function IncidentsPage() {
         .eq('id', uid)
         .single()
 
-      if (!profile) { router.replace('/login'); return }
+      if (!profile) return
       setStoreId(profile.store_id)
       setRole(profile.role)
 
@@ -172,7 +169,7 @@ export default function IncidentsPage() {
       setLoading(false)
     }
     init()
-  }, [router])
+  }, [])
 
   async function fetchIncidents(sid: string) {
     const { data } = await supabase

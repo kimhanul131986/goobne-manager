@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
@@ -38,7 +37,6 @@ function formatDate(iso: string) {
 // 페이지
 // ──────────────────────────────────────────
 export default function ManualsPage() {
-  const router = useRouter()
   const [manuals, setManuals] = useState<Manual[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Category>('레시피')
@@ -49,7 +47,7 @@ export default function ManualsPage() {
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.replace('/login'); return }
+      if (!session) return
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -57,7 +55,7 @@ export default function ManualsPage() {
         .eq('id', session.user.id)
         .single()
 
-      if (!profile) { router.replace('/login'); return }
+      if (!profile) return
       setRole(profile.role)
       setStoreId(profile.store_id)
 
@@ -71,7 +69,7 @@ export default function ManualsPage() {
       setLoading(false)
     }
     load()
-  }, [router])
+  }, [])
 
   // 탭 + 검색 필터 (메모이즈)
   const filtered = useMemo(() => {

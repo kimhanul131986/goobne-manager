@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 // ──────────────────────────────────────────
@@ -202,8 +201,6 @@ function ScheduleModal({
 // 페이지 컴포넌트
 // ──────────────────────────────────────────
 export default function SchedulePage() {
-  const router = useRouter()
-
   // 기본 상태
   const [weekStart, setWeekStart]         = useState<Date>(() => getMonday(new Date()))
   const [schedules, setSchedules]         = useState<Schedule[]>([])
@@ -225,7 +222,7 @@ export default function SchedulePage() {
   useEffect(() => {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.replace('/login'); return }
+      if (!session) return
       setUserId(session.user.id)
 
       const { data: profile } = await supabase
@@ -234,7 +231,7 @@ export default function SchedulePage() {
         .eq('id', session.user.id)
         .single()
 
-      if (!profile) { router.replace('/login'); return }
+      if (!profile) return
       setRole(profile.role)
       setStoreId(profile.store_id)
 
@@ -249,7 +246,7 @@ export default function SchedulePage() {
       setLoading(false)
     }
     init()
-  }, [router])
+  }, [])
 
   // ── 주간 스케줄 fetch ──
   const fetchSchedules = useCallback(async (start: Date, sid: string) => {

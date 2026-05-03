@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
@@ -19,7 +18,6 @@ function Skeleton({ className }: { className?: string }) {
 }
 
 export default function NoticesPage() {
-  const router = useRouter()
   const [notices, setNotices] = useState<Notice[]>([])
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState<string | null>(null)
@@ -27,7 +25,7 @@ export default function NoticesPage() {
   useEffect(() => {
     async function fetchNotices() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.replace('/login'); return }
+      if (!session) return
       const userId = session.user.id
 
       // 프로필 + 매장
@@ -37,7 +35,7 @@ export default function NoticesPage() {
         .eq('id', userId)
         .single()
 
-      if (!profile) { router.replace('/login'); return }
+      if (!profile) return
       setRole(profile.role)
 
       // 공지 목록 + 작성자 이름
@@ -71,7 +69,7 @@ export default function NoticesPage() {
     }
 
     fetchNotices()
-  }, [router])
+  }, [])
 
   const unreadCount = notices.filter((n) => !n.isRead).length
 

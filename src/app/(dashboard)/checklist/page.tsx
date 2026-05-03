@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 // ──────────────────────────────────────────
@@ -37,7 +36,6 @@ const TAB_ICON: Record<Category, string> = {
 // 페이지
 // ──────────────────────────────────────────
 export default function ChecklistPage() {
-  const router = useRouter()
   const [activeTab, setActiveTab] = useState<Category>('오픈')
   const [items, setItems] = useState<Record<Category, CheckItem[]>>({
     오픈: [], 마감: [], 청소: [],
@@ -57,7 +55,7 @@ export default function ChecklistPage() {
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.replace('/login'); return }
+      if (!session) return
       const uid = session.user.id
       setUserId(uid)
 
@@ -67,7 +65,7 @@ export default function ChecklistPage() {
         .eq('id', uid)
         .single()
 
-      if (!profile) { router.replace('/login'); return }
+      if (!profile) return
       setRole(profile.role)
       setStoreId(profile.store_id)
 
@@ -75,7 +73,7 @@ export default function ChecklistPage() {
       setLoading(false)
     }
     load()
-  }, [router])
+  }, [])
 
   async function fetchAll(sid: string, uid: string) {
     // 전체 템플릿

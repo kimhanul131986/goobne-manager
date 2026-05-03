@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 // ──────────────────────────────────────────
@@ -132,8 +131,6 @@ function HandoverCard({ item, isMine, onDelete }: CardProps) {
 // 페이지
 // ──────────────────────────────────────────
 export default function HandoverPage() {
-  const router = useRouter()
-
   // 유저 상태
   const [userId, setUserId] = useState('')
   const [storeId, setStoreId] = useState('')
@@ -153,7 +150,7 @@ export default function HandoverPage() {
   useEffect(() => {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.replace('/login'); return }
+      if (!session) return
       const uid = session.user.id
       setUserId(uid)
 
@@ -163,14 +160,14 @@ export default function HandoverPage() {
         .eq('id', uid)
         .single()
 
-      if (!profile) { router.replace('/login'); return }
+      if (!profile) return
       setStoreId(profile.store_id)
 
       await fetchHandovers(profile.store_id)
       setLoading(false)
     }
     init()
-  }, [router])
+  }, [])
 
   async function fetchHandovers(sid: string) {
     const since = new Date()

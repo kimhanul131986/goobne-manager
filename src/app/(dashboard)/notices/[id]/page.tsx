@@ -26,7 +26,7 @@ export default function NoticeDetailPage() {
   useEffect(() => {
     async function fetchNotice() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.replace('/login'); return }
+      if (!session) return
       const userId = session.user.id
 
       // 공지 상세

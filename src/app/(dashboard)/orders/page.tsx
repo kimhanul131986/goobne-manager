@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 // ──────────────────────────────────────────
@@ -38,7 +37,6 @@ function Skeleton({ className }: { className?: string }) {
 // 페이지
 // ──────────────────────────────────────────
 export default function OrdersPage() {
-  const router = useRouter()
   const [items, setItems] = useState<OrderItem[]>([])
   const [logs, setLogs] = useState<OrderLog[]>([])
   const [loading, setLoading] = useState(true)
@@ -55,7 +53,7 @@ export default function OrdersPage() {
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.replace('/login'); return }
+      if (!session) return
       const uid = session.user.id
       setUserId(uid)
 
@@ -65,7 +63,7 @@ export default function OrdersPage() {
         .eq('id', uid)
         .single()
 
-      if (!profile) { router.replace('/login'); return }
+      if (!profile) return
       setRole(profile.role)
       setStoreId(profile.store_id)
 
@@ -80,7 +78,7 @@ export default function OrdersPage() {
     return () => {
       if (submitTimer.current) clearTimeout(submitTimer.current)
     }
-  }, [router])
+  }, [])
 
   async function loadItems(sid: string) {
     const { data } = await supabase

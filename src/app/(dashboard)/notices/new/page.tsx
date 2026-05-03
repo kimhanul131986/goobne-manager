@@ -16,7 +16,7 @@ export default function NoticeNewPage() {
   useEffect(() => {
     async function checkAuth() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.replace('/login'); return }
+      if (!session) return
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -42,7 +42,7 @@ export default function NoticeNewPage() {
     setError(null)
 
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { router.replace('/login'); return }
+    if (!session) return
     const userId = session.user.id
 
     const { data: profile } = await supabase
