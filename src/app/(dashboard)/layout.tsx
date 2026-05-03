@@ -4,23 +4,53 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { StoreProvider, useStore, type StoreInfo } from '@/lib/store-context'
 
 // ──────────────────────────────────────────
 // 네비게이션 메뉴 정의
 // ──────────────────────────────────────────
 const NAV_ITEMS = [
-  { href: '/dashboard',   label: '홈',         icon: '🏠' },
-  { href: '/notices',     label: '공지',       icon: '📢' },
-  { href: '/orders',      label: '발주',       icon: '📦' },
-  { href: '/schedule',    label: '스케줄',     icon: '📅' },
-  { href: '/checklist',   label: '체크리스트', icon: '📋' },
-  { href: '/manuals',     label: '매뉴얼',     icon: '📖' },
-  { href: '/handover',    label: '인수인계',   icon: '🔄' },
-  { href: '/incidents',   label: '이슈신고',   icon: '⚠️' },
+  { href: '/dashboard',  label: '홈',         icon: '🏠' },
+  { href: '/notices',    label: '공지',       icon: '📢' },
+  { href: '/orders',     label: '발주',       icon: '📦' },
+  { href: '/schedule',   label: '스케줄',     icon: '📅' },
+  { href: '/checklist',  label: '체크리스트', icon: '📋' },
+  { href: '/manuals',    label: '매뉴얼',     icon: '📖' },
+  { href: '/handover',   label: '인수인계',   icon: '🔄' },
+  { href: '/incidents',  label: '이슈신고',   icon: '⚠️' },
 ]
 
-// 탭바에는 공간이 좁아서 5개만 노출, 나머지는 사이드바에만 표시
 const TAB_ITEMS = NAV_ITEMS.slice(0, 5)
+
+// ──────────────────────────────────────────
+// 테마 정의
+// ──────────────────────────────────────────
+const THEMES = {
+  dark: {
+    mainBg:    'bg-neutral-950',
+    sidebarBg: 'bg-neutral-900',
+    border:    'border-neutral-800',
+    headerBg:  'bg-neutral-900/50',
+    mobileBg:  'bg-neutral-900',
+    navHover:  'hover:bg-neutral-800 hover:text-white',
+    activeNav: 'bg-[#E8001D]/15 text-[#E8001D]',
+    btnBg:     'bg-neutral-800 hover:bg-neutral-700',
+    tabBg:     'bg-neutral-900',
+    tabBorder: 'border-neutral-800',
+  },
+  red: {
+    mainBg:    'bg-[#120000]',
+    sidebarBg: 'bg-red-950',
+    border:    'border-red-900',
+    headerBg:  'bg-red-950/80',
+    mobileBg:  'bg-red-950',
+    navHover:  'hover:bg-red-900 hover:text-white',
+    activeNav: 'bg-white/10 text-white',
+    btnBg:     'bg-red-900 hover:bg-red-800',
+    tabBg:     'bg-red-950',
+    tabBorder: 'border-red-900',
+  },
+}
 
 // ──────────────────────────────────────────
 // 타입
@@ -28,110 +58,63 @@ const TAB_ITEMS = NAV_ITEMS.slice(0, 5)
 interface UserProfile {
   name: string
   role: string
-  storeName: string
 }
 
 // ──────────────────────────────────────────
-// 레이아웃
+// 내부 레이아웃 (StoreProvider 안쪽)
 // ──────────────────────────────────────────
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
+function InnerLayout({ profile, onLogout, children }: {
+  profile: UserProfile | null
+  onLogout: () => void
+  children: React.ReactNode
+}) {
   const pathname = usePathname()
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [authChecked, setAuthChecked] = useState(false)
+  const { store, stores, switchStore } = useStore()
 
-  useEffect(() => {
-    let mounted = true
-
-    async function loadProfile() {
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser()
-
-        if (!mounted) return
-
-        if (error || !user) {
-          router.replace('/login')
-          return
-        }
-
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('name, role, store_id')
-          .eq('id', user.id)
-          .single()
-
-        if (!mounted) return
-
-        if (profileData) {
-          let storeName = '매장 미지정'
-          if (profileData.store_id) {
-            const { data: storeData } = await supabase
-              .from('stores')
-              .select('name')
-              .eq('id', profileData.store_id)
-              .single()
-            if (storeData) storeName = storeData.name
-          }
-          setProfile({
-            name: profileData.name,
-            role: profileData.role,
-            storeName,
-          })
-        }
-      } catch (e) {
-        console.error('profile fetch error', e)
-      } finally {
-        if (mounted) setAuthChecked(true)
-      }
-    }
-
-    loadProfile()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
-        router.replace('/login')
-      }
-    })
-
-    return () => {
-      mounted = false
-      subscription.unsubscribe()
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.replace('/login')
-  }
-
-  // 인증 확인 전 화면 빈칸 처리
-  if (!authChecked) {
-    return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-        <span className="text-neutral-500 text-sm animate-pulse">불러오는 중…</span>
-      </div>
-    )
-  }
+  const themeKey = store?.theme ?? 'dark'
+  const t = THEMES[themeKey]
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex">
+    <div className={`min-h-screen ${t.mainBg} text-white flex`}>
 
       {/* ── 데스크탑 사이드바 ── */}
-      <aside className="hidden md:flex flex-col w-56 shrink-0 bg-neutral-900 border-r border-neutral-800 min-h-screen fixed top-0 left-0">
+      <aside className={`hidden md:flex flex-col w-56 shrink-0 ${t.sidebarBg} border-r ${t.border} min-h-screen fixed top-0 left-0`}>
 
         {/* 로고 */}
-        <div className="px-5 py-5 border-b border-neutral-800">
+        <div className={`px-5 py-4 border-b ${t.border}`}>
           <p className="text-base font-extrabold tracking-tight leading-tight">
             <span style={{ color: '#E8001D' }}>굽네치킨</span>
           </p>
-          <p className="text-xs text-neutral-300 font-semibold">홍대성산점</p>
-          <p className="text-[10px] text-neutral-500 mt-0.5">매장관리</p>
+          <p className="text-[10px] text-neutral-400 mt-0.5">매장관리</p>
         </div>
 
-        {/* 매장명 */}
-        <div className="px-5 py-3 border-b border-neutral-800">
-          <p className="text-xs text-neutral-500">현재 매장</p>
-          <p className="text-sm font-semibold text-white truncate">{profile?.storeName}</p>
+        {/* 매장 전환 버튼 */}
+        {stores.length > 1 && (
+          <div className={`px-3 py-2.5 border-b ${t.border} flex gap-1.5`}>
+            {stores.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => switchStore(s)}
+                className={`
+                  flex-1 text-xs font-bold py-1.5 rounded-lg transition-all
+                  ${store?.id === s.id
+                    ? s.theme === 'red'
+                      ? 'bg-[#E8001D] text-white'
+                      : 'bg-neutral-700 text-white'
+                    : 'text-neutral-500 hover:text-neutral-300'
+                  }
+                `}
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* 현재 매장 */}
+        <div className={`px-5 py-3 border-b ${t.border}`}>
+          <p className="text-[10px] text-neutral-500">현재 매장</p>
+          <p className="text-sm font-semibold text-white truncate">{store?.name ?? '—'}</p>
         </div>
 
         {/* 메뉴 */}
@@ -141,18 +124,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               item.href === '/dashboard'
                 ? pathname === '/dashboard'
                 : pathname.startsWith(item.href)
-
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                  transition-colors
-                  ${isActive
-                    ? 'bg-[#E8001D]/15 text-[#E8001D]'
-                    : 'text-neutral-400 hover:bg-neutral-800 hover:text-white'
-                  }
+                  flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                  ${isActive ? t.activeNav : `text-neutral-400 ${t.navHover}`}
                 `}
               >
                 <span className="text-base leading-none">{item.icon}</span>
@@ -163,12 +141,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* 유저 정보 + 로그아웃 */}
-        <div className="px-4 py-4 border-t border-neutral-800">
+        <div className={`px-4 py-4 border-t ${t.border}`}>
           <p className="text-xs text-neutral-500 truncate">{profile?.name}</p>
           <p className="text-xs text-neutral-600 mb-2">{profile?.role}</p>
           <button
-            onClick={handleLogout}
-            className="w-full text-xs text-neutral-400 hover:text-white bg-neutral-800 hover:bg-neutral-700 rounded-lg py-2 transition-colors"
+            onClick={onLogout}
+            className={`w-full text-xs text-neutral-400 hover:text-white ${t.btnBg} rounded-lg py-2 transition-colors`}
           >
             로그아웃
           </button>
@@ -178,25 +156,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── 메인 콘텐츠 영역 ── */}
       <div className="flex-1 flex flex-col md:ml-56 min-h-screen">
 
-        {/* 상단 헤더 (모바일에서만 표시) */}
-        <header className="md:hidden flex items-center justify-between px-4 py-3 bg-neutral-900 border-b border-neutral-800 sticky top-0 z-30">
-          <div>
-            <p className="text-sm font-extrabold">
-              <span style={{ color: '#E8001D' }}>굽네치킨</span>
-              <span className="text-neutral-300 text-xs font-semibold ml-1">홍대성산점</span>
-            </p>
-            <p className="text-[10px] text-neutral-500">매장관리</p>
+        {/* 모바일 헤더 */}
+        <header className={`md:hidden flex flex-col ${t.mobileBg} border-b ${t.border} sticky top-0 z-30`}>
+          {/* 매장 전환 (모바일) */}
+          {stores.length > 1 && (
+            <div className={`flex border-b ${t.border}`}>
+              {stores.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => switchStore(s)}
+                  className={`
+                    flex-1 py-2 text-xs font-bold transition-all
+                    ${store?.id === s.id
+                      ? s.theme === 'red'
+                        ? 'bg-[#E8001D]/20 text-[#E8001D]'
+                        : 'bg-neutral-700/60 text-white'
+                      : 'text-neutral-600'
+                    }
+                  `}
+                >
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center justify-between px-4 py-3">
+            <div>
+              <p className="text-sm font-extrabold">
+                <span style={{ color: '#E8001D' }}>굽네치킨</span>
+              </p>
+              <p className="text-[10px] text-neutral-500">{store?.name ?? ''} 매장관리</p>
+            </div>
+            <button
+              onClick={onLogout}
+              className={`text-xs text-neutral-400 ${t.btnBg} rounded-lg px-3 py-1.5 active:scale-95 transition-transform`}
+            >
+              로그아웃
+            </button>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-xs text-neutral-400 bg-neutral-800 rounded-lg px-3 py-1.5 active:scale-95 transition-transform"
-          >
-            로그아웃
-          </button>
         </header>
 
-        {/* 데스크탑 상단 헤더 */}
-        <header className="hidden md:flex items-center justify-between px-6 py-4 border-b border-neutral-800 bg-neutral-900/50 sticky top-0 z-30 backdrop-blur">
+        {/* 데스크탑 헤더 */}
+        <header className={`hidden md:flex items-center justify-between px-6 py-4 border-b ${t.border} ${t.headerBg} sticky top-0 z-30 backdrop-blur`}>
           <h1 className="text-sm font-semibold text-neutral-200">
             {NAV_ITEMS.find((i) =>
               i.href === '/dashboard'
@@ -204,9 +205,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 : pathname.startsWith(i.href)
             )?.label ?? ''}
           </h1>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-neutral-500">{profile?.name} · {profile?.role}</span>
-          </div>
+          <span className="text-xs text-neutral-500">{profile?.name} · {profile?.role}</span>
         </header>
 
         {/* 페이지 콘텐츠 */}
@@ -216,13 +215,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* ── 모바일 하단 탭바 ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-neutral-900 border-t border-neutral-800 flex">
+      <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-40 ${t.tabBg} border-t ${t.tabBorder} flex`}>
         {TAB_ITEMS.map((item) => {
           const isActive =
             item.href === '/dashboard'
               ? pathname === '/dashboard'
               : pathname.startsWith(item.href)
-
           return (
             <Link
               key={item.href}
@@ -240,5 +238,89 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         })}
       </nav>
     </div>
+  )
+}
+
+// ──────────────────────────────────────────
+// 외부 레이아웃 (인증 + StoreProvider)
+// ──────────────────────────────────────────
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [stores, setStores] = useState<StoreInfo[]>([])
+  const [authChecked, setAuthChecked] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+
+    async function init() {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser()
+        if (!mounted) return
+        if (error || !user) { router.replace('/login'); return }
+
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('name, role, store_id')
+          .eq('id', user.id)
+          .single()
+
+        if (!mounted) return
+
+        if (profileData) {
+          setProfile({ name: profileData.name, role: profileData.role })
+        }
+
+        // 모든 매장 로드 (추후 권한 기반으로 필터 가능)
+        const { data: storeRows } = await supabase
+          .from('stores')
+          .select('id, name')
+          .order('name')
+
+        if (!mounted) return
+
+        if (storeRows) {
+          const mapped: StoreInfo[] = storeRows.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            theme: s.name.includes('홍대') ? 'red' : 'dark',
+          }))
+          setStores(mapped)
+        }
+      } catch (e) {
+        console.error('init error', e)
+      } finally {
+        if (mounted) setAuthChecked(true)
+      }
+    }
+
+    init()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') router.replace('/login')
+    })
+
+    return () => { mounted = false; subscription.unsubscribe() }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.replace('/login')
+  }
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+        <span className="text-neutral-500 text-sm animate-pulse">불러오는 중…</span>
+      </div>
+    )
+  }
+
+  return (
+    <StoreProvider stores={stores}>
+      <InnerLayout profile={profile} onLogout={handleLogout}>
+        {children}
+      </InnerLayout>
+    </StoreProvider>
   )
 }

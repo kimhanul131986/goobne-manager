@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useStore } from '@/lib/store-context'
 
 // ──────────────────────────────────────────
 // 타입
@@ -201,6 +202,7 @@ function ScheduleModal({
 // 페이지 컴포넌트
 // ──────────────────────────────────────────
 export default function SchedulePage() {
+  const { store } = useStore()
   // 기본 상태
   const [weekStart, setWeekStart]         = useState<Date>(() => getMonday(new Date()))
   const [schedules, setSchedules]         = useState<Schedule[]>([])
@@ -220,6 +222,7 @@ export default function SchedulePage() {
 
   // ── 초기 로드 ──
   useEffect(() => {
+    if (!store) return
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
@@ -227,26 +230,26 @@ export default function SchedulePage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, store_id')
+        .select('role')
         .eq('id', user.id)
         .single()
 
       if (!profile) { setLoading(false); return }
       setRole(profile.role)
-      setStoreId(profile.store_id)
+      setStoreId(store.id)
 
       // 매장 직원 목록 (admin 모달용)
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, name')
-        .eq('store_id', profile.store_id)
+        .eq('store_id', store.id)
         .order('name')
 
       setStoreProfiles(profiles ?? [])
       setLoading(false)
     }
     init()
-  }, [])
+  }, [store])
 
   // ── 주간 스케줄 fetch ──
   const fetchSchedules = useCallback(async (start: Date, sid: string) => {

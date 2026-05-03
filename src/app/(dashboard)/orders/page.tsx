@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useStore } from '@/lib/store-context'
 
 // ──────────────────────────────────────────
 // 타입
@@ -37,6 +38,7 @@ function Skeleton({ className }: { className?: string }) {
 // 페이지
 // ──────────────────────────────────────────
 export default function OrdersPage() {
+  const { store } = useStore()
   const [items, setItems] = useState<OrderItem[]>([])
   const [logs, setLogs] = useState<OrderLog[]>([])
   const [loading, setLoading] = useState(true)
@@ -51,6 +53,7 @@ export default function OrdersPage() {
 
   // ── 초기 데이터 로드 ──
   useEffect(() => {
+    if (!store) return
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
@@ -59,17 +62,17 @@ export default function OrdersPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, store_id')
+        .select('role')
         .eq('id', uid)
         .single()
 
       if (!profile) { setLoading(false); return }
       setRole(profile.role)
-      setStoreId(profile.store_id)
+      setStoreId(store.id)
 
       await Promise.all([
-        loadItems(profile.store_id),
-        loadLogs(profile.store_id),
+        loadItems(store.id),
+        loadLogs(store.id),
       ])
       setLoading(false)
     }
@@ -78,7 +81,7 @@ export default function OrdersPage() {
     return () => {
       if (submitTimer.current) clearTimeout(submitTimer.current)
     }
-  }, [])
+  }, [store])
 
   async function loadItems(sid: string) {
     const { data } = await supabase

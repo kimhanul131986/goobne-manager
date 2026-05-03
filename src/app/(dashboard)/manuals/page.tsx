@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { useStore } from '@/lib/store-context'
 
 // ──────────────────────────────────────────
 // 타입
@@ -37,6 +38,7 @@ function formatDate(iso: string) {
 // 페이지
 // ──────────────────────────────────────────
 export default function ManualsPage() {
+  const { store } = useStore()
   const [manuals, setManuals] = useState<Manual[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Category>('레시피')
@@ -45,31 +47,32 @@ export default function ManualsPage() {
   const [storeId, setStoreId] = useState('')
 
   useEffect(() => {
+    if (!store) return
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, store_id')
+        .select('role')
         .eq('id', user.id)
         .single()
 
       if (!profile) { setLoading(false); return }
       setRole(profile.role)
-      setStoreId(profile.store_id)
+      setStoreId(store.id)
 
       const { data } = await supabase
         .from('manuals')
         .select('id, category, title, updated_at, profiles(name)')
-        .eq('store_id', profile.store_id)
+        .eq('store_id', store.id)
         .order('updated_at', { ascending: false })
 
       setManuals((data as Manual[]) ?? [])
       setLoading(false)
     }
     load()
-  }, [])
+  }, [store])
 
   // 탭 + 검색 필터 (메모이즈)
   const filtered = useMemo(() => {

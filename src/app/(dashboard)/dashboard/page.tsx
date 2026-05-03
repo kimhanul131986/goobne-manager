@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useStore } from '@/lib/store-context'
 
 // ──────────────────────────────────────────
 // 타입
@@ -61,36 +62,30 @@ function CardSkeleton() {
 // ──────────────────────────────────────────
 export default function DashboardPage() {
   const router = useRouter()
+  const { store } = useStore()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const today = formatDate(new Date())
 
   useEffect(() => {
+    if (!store) return
     async function fetchAll() {
       // 1. 유저 확인
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
       const userId = user.id
 
-      // 2. 프로필 + 매장
+      // 2. 프로필 (이름만)
       const { data: profile } = await supabase
         .from('profiles')
-        .select('name, role, store_id')
+        .select('name')
         .eq('id', userId)
         .single()
 
       if (!profile) { setLoading(false); return }
 
-      const storeId: string = profile.store_id
-      let storeName = '매장 미지정'
-      if (storeId) {
-        const { data: storeData } = await supabase
-          .from('stores')
-          .select('name')
-          .eq('id', storeId)
-          .single()
-        if (storeData) storeName = storeData.name
-      }
+      const storeId: string = store.id
+      const storeName = store.name
 
       // 3. 병렬 패치
       const [
@@ -155,7 +150,7 @@ export default function DashboardPage() {
     }
 
     fetchAll()
-  }, [router, today.dateStr])
+  }, [store, router, today.dateStr])
 
   // ──────────────────────────────────────────
   // 스켈레톤 UI

@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useStore } from '@/lib/store-context'
 
 export default function NoticeNewPage() {
   const router = useRouter()
+  const { store } = useStore()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -45,14 +47,8 @@ export default function NoticeNewPage() {
     if (!user) return
     const userId = user.id
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('store_id')
-      .eq('id', userId)
-      .single()
-
-    if (!profile) {
-      setError('프로필 정보를 불러올 수 없습니다.')
+    if (!store) {
+      setError('매장 정보를 불러올 수 없습니다.')
       setSubmitting(false)
       return
     }
@@ -60,7 +56,7 @@ export default function NoticeNewPage() {
     const { error: insertError } = await supabase
       .from('notices')
       .insert({
-        store_id: profile.store_id,
+        store_id: store.id,
         title: title.trim(),
         content: content.trim(),
         created_by: userId,

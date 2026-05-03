@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { useStore } from '@/lib/store-context'
 
 interface Notice {
   id: string
@@ -18,31 +19,35 @@ function Skeleton({ className }: { className?: string }) {
 }
 
 export default function NoticesPage() {
+  const { store } = useStore()
   const [notices, setNotices] = useState<Notice[]>([])
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!store) return
     async function fetchNotices() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const userId = user.id
 
-      // 프로필 + 매장
+      // 프로필 + 역할
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, store_id')
+        .select('role')
         .eq('id', userId)
         .single()
 
       if (!profile) { setLoading(false); return }
       setRole(profile.role)
 
+      const storeId = store.id
+
       // 공지 목록 + 작성자 이름
       const { data: noticeRows } = await supabase
         .from('notices')
         .select('id, title, created_at, created_by, profiles(name)')
-        .eq('store_id', profile.store_id)
+        .eq('store_id', storeId)
         .order('created_at', { ascending: false })
 
       if (!noticeRows) { setLoading(false); return }
@@ -69,7 +74,7 @@ export default function NoticesPage() {
     }
 
     fetchNotices()
-  }, [])
+  }, [store])
 
   const unreadCount = notices.filter((n) => !n.isRead).length
 

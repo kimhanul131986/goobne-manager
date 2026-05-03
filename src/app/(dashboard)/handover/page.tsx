@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useStore } from '@/lib/store-context'
 
 // ──────────────────────────────────────────
 // 타입
@@ -131,6 +132,7 @@ function HandoverCard({ item, isMine, onDelete }: CardProps) {
 // 페이지
 // ──────────────────────────────────────────
 export default function HandoverPage() {
+  const { store } = useStore()
   // 유저 상태
   const [userId, setUserId] = useState('')
   const [userName, setUserName] = useState('')
@@ -149,6 +151,7 @@ export default function HandoverPage() {
 
   // ── 초기 로드 ──
   useEffect(() => {
+    if (!store) return
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
@@ -157,19 +160,19 @@ export default function HandoverPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('name, store_id')
+        .select('name')
         .eq('id', uid)
         .single()
 
       if (!profile) { setLoading(false); return }
       setUserName(profile.name)
-      setStoreId(profile.store_id)
+      setStoreId(store.id)
 
-      await fetchHandovers(profile.store_id)
+      await fetchHandovers(store.id)
       setLoading(false)
     }
     init()
-  }, [])
+  }, [store])
 
   async function fetchHandovers(sid: string) {
     const since = new Date()

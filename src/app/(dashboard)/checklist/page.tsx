@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useStore } from '@/lib/store-context'
 
 // ──────────────────────────────────────────
 // 타입
@@ -36,6 +37,7 @@ const TAB_ICON: Record<Category, string> = {
 // 페이지
 // ──────────────────────────────────────────
 export default function ChecklistPage() {
+  const { store } = useStore()
   const [activeTab, setActiveTab] = useState<Category>('오픈')
   const [items, setItems] = useState<Record<Category, CheckItem[]>>({
     오픈: [], 마감: [], 청소: [],
@@ -53,6 +55,7 @@ export default function ChecklistPage() {
 
   // ── 초기 로드 ──
   useEffect(() => {
+    if (!store) return
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
@@ -61,19 +64,19 @@ export default function ChecklistPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, store_id')
+        .select('role')
         .eq('id', uid)
         .single()
 
       if (!profile) { setLoading(false); return }
       setRole(profile.role)
-      setStoreId(profile.store_id)
+      setStoreId(store.id)
 
-      await fetchAll(profile.store_id, uid)
+      await fetchAll(store.id, uid)
       setLoading(false)
     }
     load()
-  }, [])
+  }, [store])
 
   async function fetchAll(sid: string, uid: string) {
     // 전체 템플릿

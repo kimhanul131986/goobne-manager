@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useStore } from '@/lib/store-context'
 
 // ──────────────────────────────────────────
 // 타입
@@ -130,6 +131,7 @@ function IncidentCard({ item, isAdmin, currentUserId, onResolve, onDelete }: Car
 // 페이지
 // ──────────────────────────────────────────
 export default function IncidentsPage() {
+  const { store } = useStore()
   // 유저
   const [userId, setUserId]     = useState('')
   const [userName, setUserName] = useState('')
@@ -150,6 +152,7 @@ export default function IncidentsPage() {
 
   // ── 초기 로드 ──
   useEffect(() => {
+    if (!store) return
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
@@ -158,20 +161,20 @@ export default function IncidentsPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('name, store_id, role')
+        .select('name, role')
         .eq('id', uid)
         .single()
 
       if (!profile) { setLoading(false); return }
       setUserName(profile.name)
-      setStoreId(profile.store_id)
+      setStoreId(store.id)
       setRole(profile.role)
 
-      await fetchIncidents(profile.store_id)
+      await fetchIncidents(store.id)
       setLoading(false)
     }
     init()
-  }, [])
+  }, [store])
 
   async function fetchIncidents(sid: string) {
     const { data } = await supabase
