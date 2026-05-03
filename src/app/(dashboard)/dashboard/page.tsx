@@ -69,7 +69,7 @@ export default function DashboardPage() {
     async function fetchAll() {
       // 1. 유저 확인
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setLoading(false); return }
       const userId = user.id
 
       // 2. 프로필 + 매장
@@ -79,7 +79,7 @@ export default function DashboardPage() {
         .eq('id', userId)
         .single()
 
-      if (!profile) return
+      if (!profile) { setLoading(false); return }
 
       const storeId: string = profile.store_id
       const storeName: string = (profile.stores as any)?.name ?? '매장 미지정'
@@ -306,8 +306,8 @@ export default function DashboardPage() {
         <p className="text-xs text-neutral-500 mb-3">빠른 이동</p>
         <div className="grid grid-cols-4 gap-2">
           {[
-            { href: '/dashboard/orders',  icon: '📦', label: '발주' },
-            { href: '/dashboard/manuals', icon: '📖', label: '매뉴얼' },
+            { href: '/orders',  icon: '📦', label: '발주' },
+            { href: '/manuals', icon: '📖', label: '매뉴얼' },
             { href: '/handover', icon: '🔄', label: '인수인계' },
             { href: '/incidents', icon: '⚠️', label: '이슈신고' },
           ].map((item) => (

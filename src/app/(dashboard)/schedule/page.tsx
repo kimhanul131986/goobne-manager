@@ -222,7 +222,7 @@ export default function SchedulePage() {
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setLoading(false); return }
       setUserId(user.id)
 
       const { data: profile } = await supabase
@@ -231,7 +231,7 @@ export default function SchedulePage() {
         .eq('id', user.id)
         .single()
 
-      if (!profile) return
+      if (!profile) { setLoading(false); return }
       setRole(profile.role)
       setStoreId(profile.store_id)
 

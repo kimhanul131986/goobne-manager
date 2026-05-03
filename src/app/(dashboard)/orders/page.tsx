@@ -53,7 +53,7 @@ export default function OrdersPage() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setLoading(false); return }
       const uid = user.id
       setUserId(uid)
 
@@ -63,7 +63,7 @@ export default function OrdersPage() {
         .eq('id', uid)
         .single()
 
-      if (!profile) return
+      if (!profile) { setLoading(false); return }
       setRole(profile.role)
       setStoreId(profile.store_id)
 

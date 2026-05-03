@@ -47,7 +47,7 @@ export default function ManualsPage() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setLoading(false); return }
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -55,7 +55,7 @@ export default function ManualsPage() {
         .eq('id', user.id)
         .single()
 
-      if (!profile) return
+      if (!profile) { setLoading(false); return }
       setRole(profile.role)
       setStoreId(profile.store_id)
 
@@ -112,7 +112,7 @@ export default function ManualsPage() {
         <h2 className="text-lg font-bold text-white">매뉴얼</h2>
         {canWrite && (
           <Link
-            href={`/dashboard/manuals/new?category=${activeTab}`}
+            href={`/manuals/new?category=${activeTab}`}
             className="text-sm font-semibold text-white rounded-xl px-4 py-2 active:scale-95 transition-transform"
             style={{ backgroundColor: '#E8001D' }}
           >
@@ -182,7 +182,7 @@ export default function ManualsPage() {
           {filtered.map((manual) => (
             <li key={manual.id}>
               <Link
-                href={`/dashboard/manuals/${manual.id}`}
+                href={`/manuals/${manual.id}`}
                 className="flex items-center justify-between bg-neutral-900 hover:bg-neutral-800 active:scale-[0.99] transition-all rounded-2xl px-5 py-4 border border-neutral-800"
               >
                 <div className="min-w-0">

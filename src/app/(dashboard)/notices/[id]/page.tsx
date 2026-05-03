@@ -26,7 +26,7 @@ export default function NoticeDetailPage() {
   useEffect(() => {
     async function fetchNotice() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setLoading(false); return }
       const userId = user.id
 
       // 공지 상세

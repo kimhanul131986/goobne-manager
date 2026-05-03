@@ -151,7 +151,7 @@ export default function IncidentsPage() {
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setLoading(false); return }
       const uid = user.id
       setUserId(uid)
 
@@ -161,7 +161,7 @@ export default function IncidentsPage() {
         .eq('id', uid)
         .single()
 
-      if (!profile) return
+      if (!profile) { setLoading(false); return }
       setStoreId(profile.store_id)
       setRole(profile.role)
 
