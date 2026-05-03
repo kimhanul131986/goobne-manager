@@ -39,30 +39,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
-  const [debugMsg, setDebugMsg] = useState('시작')
 
   useEffect(() => {
     let mounted = true
 
     async function loadProfile() {
       try {
-        setDebugMsg('getUser 호출 중...')
         const { data: { user }, error } = await supabase.auth.getUser()
 
         if (!mounted) return
 
-        if (error) {
-          setDebugMsg('에러: ' + error.message)
-          setTimeout(() => router.replace('/login'), 3000)
+        if (error || !user) {
+          router.replace('/login')
           return
         }
-        if (!user) {
-          setDebugMsg('user 없음 → 로그인으로')
-          setTimeout(() => router.replace('/login'), 3000)
-          return
-        }
-
-        setDebugMsg('user: ' + user.email + ' → 프로필 로드 중')
 
         const { data } = await supabase
           .from('profiles')
@@ -79,12 +69,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             storeName: (data.stores as any)?.name ?? '매장 미지정',
           })
         }
-        setDebugMsg('완료')
-      } catch (e: any) {
-        if (mounted) {
-          setDebugMsg('catch: ' + e.message)
-          setTimeout(() => router.replace('/login'), 3000)
-        }
+      } catch (e) {
+        console.error('profile fetch error', e)
       } finally {
         if (mounted) setAuthChecked(true)
       }
@@ -112,9 +98,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // 인증 확인 전 화면 빈칸 처리
   if (!authChecked) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center gap-3">
+      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
         <span className="text-neutral-500 text-sm animate-pulse">불러오는 중…</span>
-        <span className="text-yellow-400 text-xs font-mono px-4 text-center">{debugMsg}</span>
       </div>
     )
   }
