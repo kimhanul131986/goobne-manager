@@ -45,32 +45,36 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     // 1. 초기 세션 확인
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession()
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
 
-      if (!mounted) return
+        if (!mounted) return
 
-      if (!session) {
-        router.replace('/login')
-        return
+        if (!session) {
+          router.replace('/login')
+          return
+        }
+
+        const { data } = await supabase
+          .from('profiles')
+          .select('name, role, stores(name)')
+          .eq('id', session.user.id)
+          .single()
+
+        if (!mounted) return
+
+        if (data) {
+          setProfile({
+            name: data.name,
+            role: data.role,
+            storeName: (data.stores as any)?.name ?? '매장 미지정',
+          })
+        }
+      } catch (e) {
+        console.error('init error', e)
+      } finally {
+        if (mounted) setAuthChecked(true)
       }
-
-      const { data } = await supabase
-        .from('profiles')
-        .select('name, role, stores(name)')
-        .eq('id', session.user.id)
-        .single()
-
-      if (!mounted) return
-
-      if (data) {
-        setProfile({
-          name: data.name,
-          role: data.role,
-          storeName: (data.stores as any)?.name ?? '매장 미지정',
-        })
-      }
-
-      setAuthChecked(true)
     }
 
     init()
