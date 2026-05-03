@@ -133,6 +133,7 @@ function HandoverCard({ item, isMine, onDelete }: CardProps) {
 export default function HandoverPage() {
   // 유저 상태
   const [userId, setUserId] = useState('')
+  const [userName, setUserName] = useState('')
   const [storeId, setStoreId] = useState('')
 
   // 작성 폼
@@ -156,11 +157,12 @@ export default function HandoverPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('store_id')
+        .select('name, store_id')
         .eq('id', uid)
         .single()
 
       if (!profile) { setLoading(false); return }
+      setUserName(profile.name)
       setStoreId(profile.store_id)
 
       await fetchHandovers(profile.store_id)
@@ -208,7 +210,7 @@ export default function HandoverPage() {
         content: content.trim(),
         created_by: userId,
       })
-      .select('id, shift, content, created_at, created_by, profiles(name)')
+      .select('id, shift, content, created_at, created_by')
       .single()
 
     if (error || !data) {
@@ -224,7 +226,7 @@ export default function HandoverPage() {
       content: data.content,
       created_at: data.created_at,
       created_by: data.created_by,
-      author_name: (data.profiles as any)?.name ?? '나',
+      author_name: userName || '나',
     }
 
     setHandovers((prev) => [newItem, ...prev])

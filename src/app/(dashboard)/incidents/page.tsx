@@ -131,9 +131,10 @@ function IncidentCard({ item, isAdmin, currentUserId, onResolve, onDelete }: Car
 // ──────────────────────────────────────────
 export default function IncidentsPage() {
   // 유저
-  const [userId, setUserId]   = useState('')
-  const [storeId, setStoreId] = useState('')
-  const [role, setRole]       = useState('')
+  const [userId, setUserId]     = useState('')
+  const [userName, setUserName] = useState('')
+  const [storeId, setStoreId]   = useState('')
+  const [role, setRole]         = useState('')
 
   // 폼
   const [category, setCategory] = useState<Category>('설비')
@@ -157,11 +158,12 @@ export default function IncidentsPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('store_id, role')
+        .select('name, store_id, role')
         .eq('id', uid)
         .single()
 
       if (!profile) { setLoading(false); return }
+      setUserName(profile.name)
       setStoreId(profile.store_id)
       setRole(profile.role)
 
@@ -207,7 +209,7 @@ export default function IncidentsPage() {
         reported_by: userId,
         is_resolved: false,
       })
-      .select('id, category, content, is_resolved, created_at, reported_by, profiles(name)')
+      .select('id, category, content, is_resolved, created_at, reported_by')
       .single()
 
     if (error || !data) {
@@ -223,7 +225,7 @@ export default function IncidentsPage() {
       is_resolved: data.is_resolved,
       created_at: data.created_at,
       reported_by: data.reported_by,
-      reporter_name: (data.profiles as any)?.name ?? '나',
+      reporter_name: userName || '나',
     }
 
     setIncidents((prev) => [newItem, ...prev])

@@ -121,11 +121,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* 로고 */}
         <div className="px-5 py-5 border-b border-neutral-800">
-          <p className="text-lg font-extrabold tracking-tight">
-            <span style={{ color: '#E8001D' }}>굽네</span>
-            <span className="text-white">치킨</span>
+          <p className="text-base font-extrabold tracking-tight leading-tight">
+            <span style={{ color: '#E8001D' }}>굽네치킨</span>
           </p>
-          <p className="text-xs text-neutral-400 mt-0.5">매장관리</p>
+          <p className="text-xs text-neutral-300 font-semibold">홍대성산점</p>
+          <p className="text-[10px] text-neutral-500 mt-0.5">매장관리</p>
         </div>
 
         {/* 매장명 */}
@@ -182,11 +182,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="md:hidden flex items-center justify-between px-4 py-3 bg-neutral-900 border-b border-neutral-800 sticky top-0 z-30">
           <div>
             <p className="text-sm font-extrabold">
-              <span style={{ color: '#E8001D' }}>굽네</span>
-              <span className="text-white">치킨</span>
-              <span className="text-neutral-400 text-xs font-normal ml-1">매장관리</span>
+              <span style={{ color: '#E8001D' }}>굽네치킨</span>
+              <span className="text-neutral-300 text-xs font-semibold ml-1">홍대성산점</span>
             </p>
-            <p className="text-xs text-neutral-500">{profile?.storeName}</p>
+            <p className="text-[10px] text-neutral-500">매장관리</p>
           </div>
           <button
             onClick={handleLogout}

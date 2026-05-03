@@ -36,10 +36,10 @@ export default function LoginPage() {
         {/* 타이틀 */}
         <div className="mb-8 text-center">
           <span className="inline-block text-3xl font-extrabold tracking-tight">
-            <span style={{ color: '#E8001D' }}>굽네</span>
-            <span className="text-white">치킨</span>
+            <span style={{ color: '#E8001D' }}>굽네치킨</span>
           </span>
-          <p className="mt-1 text-sm text-neutral-400 font-medium tracking-widest uppercase">
+          <p className="mt-0.5 text-base font-bold text-neutral-200">홍대성산점</p>
+          <p className="mt-1 text-xs text-neutral-500 font-medium tracking-widest uppercase">
             매장관리
           </p>
         </div>
