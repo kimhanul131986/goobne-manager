@@ -54,19 +54,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           return
         }
 
-        const { data } = await supabase
+        const { data: profileData } = await supabase
           .from('profiles')
-          .select('name, role, stores(name)')
+          .select('name, role, store_id')
           .eq('id', user.id)
           .single()
 
         if (!mounted) return
 
-        if (data) {
+        if (profileData) {
+          let storeName = '매장 미지정'
+          if (profileData.store_id) {
+            const { data: storeData } = await supabase
+              .from('stores')
+              .select('name')
+              .eq('id', profileData.store_id)
+              .single()
+            if (storeData) storeName = storeData.name
+          }
           setProfile({
-            name: data.name,
-            role: data.role,
-            storeName: (data.stores as any)?.name ?? '매장 미지정',
+            name: profileData.name,
+            role: profileData.role,
+            storeName,
           })
         }
       } catch (e) {

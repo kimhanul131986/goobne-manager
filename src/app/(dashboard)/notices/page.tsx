@@ -35,7 +35,7 @@ export default function NoticesPage() {
         .eq('id', userId)
         .single()
 
-      if (!profile) return
+      if (!profile) { setLoading(false); return }
       setRole(profile.role)
 
       // 공지 목록 + 작성자 이름
@@ -89,7 +89,7 @@ export default function NoticesPage() {
         </div>
         {(role === 'admin' || role === 'manager') && (
           <Link
-            href="/dashboard/notices/new"
+            href="/notices/new"
             className="text-sm font-semibold text-white rounded-xl px-4 py-2 active:scale-95 transition-transform"
             style={{ backgroundColor: '#E8001D' }}
           >
@@ -120,7 +120,7 @@ export default function NoticesPage() {
           {notices.map((notice) => (
             <li key={notice.id}>
               <Link
-                href={`/dashboard/notices/${notice.id}`}
+                href={`/notices/${notice.id}`}
                 className="flex items-center gap-3 bg-neutral-900 hover:bg-neutral-800 active:scale-[0.99] transition-all rounded-2xl p-4 border border-neutral-800"
               >
                 {/* 읽음 여부 점 */}

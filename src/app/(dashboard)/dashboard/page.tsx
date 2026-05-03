@@ -75,14 +75,22 @@ export default function DashboardPage() {
       // 2. 프로필 + 매장
       const { data: profile } = await supabase
         .from('profiles')
-        .select('name, role, store_id, stores(name)')
+        .select('name, role, store_id')
         .eq('id', userId)
         .single()
 
       if (!profile) { setLoading(false); return }
 
       const storeId: string = profile.store_id
-      const storeName: string = (profile.stores as any)?.name ?? '매장 미지정'
+      let storeName = '매장 미지정'
+      if (storeId) {
+        const { data: storeData } = await supabase
+          .from('stores')
+          .select('name')
+          .eq('id', storeId)
+          .single()
+        if (storeData) storeName = storeData.name
+      }
 
       // 3. 병렬 패치
       const [
