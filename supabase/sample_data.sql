@@ -93,17 +93,17 @@ SELECT 'a279d0fb-9fef-4fb8-a472-43c153a56fc5', '레시피', '오리지널 염지
 FROM auth.users LIMIT 1;
 
 INSERT INTO manuals (store_id, category, title, content, updated_by)
-SELECT 'a279d0fb-9fef-4fb8-a472-43c153a56fc5', '운영', '오픈 순서 체크리스트',
+SELECT 'a279d0fb-9fef-4fb8-a472-43c153a56fc5', '오픈마감', '오픈 순서 체크리스트',
   '1. 전등·간판 ON\n2. 냉장고 온도 확인\n3. 그릴 예열 (15분)\n4. POS 부팅\n5. 홀 세팅', id
 FROM auth.users LIMIT 1;
 
 INSERT INTO manuals (store_id, category, title, content, updated_by)
-SELECT 'a279d0fb-9fef-4fb8-a472-43c153a56fc5', '운영', 'POS 환불 처리 방법',
+SELECT 'a279d0fb-9fef-4fb8-a472-43c153a56fc5', '오픈마감', 'POS 환불 처리 방법',
   'POS → 매출관리 → 취소/환불 → 영수증 번호 입력 → 확인. 카드 취소는 당일만 가능.', id
 FROM auth.users LIMIT 1;
 
 INSERT INTO manuals (store_id, category, title, content, updated_by)
-SELECT 'a279d0fb-9fef-4fb8-a472-43c153a56fc5', '위생', '튀김기 기름 교체 주기',
+SELECT 'a279d0fb-9fef-4fb8-a472-43c153a56fc5', '청소', '튀김기 기름 교체 주기',
   '일반 영업일 기준 3일마다 교체. 교체 시 튀김기 완전 냉각 후 진행.', id
 FROM auth.users LIMIT 1;
 
@@ -190,17 +190,17 @@ SELECT '7cf30fca-9d3c-4c55-a937-bcc7d6a4697a', '레시피', '고구마바사삭 
 FROM auth.users LIMIT 1;
 
 INSERT INTO manuals (store_id, category, title, content, updated_by)
-SELECT '7cf30fca-9d3c-4c55-a937-bcc7d6a4697a', '운영', '배달 주문 처리 순서',
+SELECT '7cf30fca-9d3c-4c55-a937-bcc7d6a4697a', '오픈마감', '배달 주문 처리 순서',
   '1. 앱 알림 확인\n2. 주문 접수(수락)\n3. 조리 시작\n4. 포장 완료 후 배달 앱 픽업 알림\n5. 배달원 전달', id
 FROM auth.users LIMIT 1;
 
 INSERT INTO manuals (store_id, category, title, content, updated_by)
-SELECT '7cf30fca-9d3c-4c55-a937-bcc7d6a4697a', '운영', '주말 피크 운영 가이드',
+SELECT '7cf30fca-9d3c-4c55-a937-bcc7d6a4697a', '오픈마감', '주말 피크 운영 가이드',
   '17~21시: 튀김·포장 전담 분리. 배달·홀 1:1 비율 유지. 사이드 메뉴 선조리 적극 활용.', id
 FROM auth.users LIMIT 1;
 
 INSERT INTO manuals (store_id, category, title, content, updated_by)
-SELECT '7cf30fca-9d3c-4c55-a937-bcc7d6a4697a', '위생', '냉동 닭 해동 기준',
+SELECT '7cf30fca-9d3c-4c55-a937-bcc7d6a4697a', '청소', '냉동 닭 해동 기준',
   '냉장 해동(12시간) 원칙. 급속 해동 시 흐르는 냉수 사용, 실온 해동 금지.', id
 FROM auth.users LIMIT 1;
 
