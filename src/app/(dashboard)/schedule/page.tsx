@@ -201,8 +201,14 @@ function ScheduleModal({
 // ──────────────────────────────────────────
 // 페이지 컴포넌트
 // ──────────────────────────────────────────
+const THEME_BG: Record<string, string> = {
+  dark: '#0a0a0a',
+  red:  '#120000',
+}
+
 export default function SchedulePage() {
   const { store } = useStore()
+  const pageBg = THEME_BG[store?.theme ?? 'dark']
   // 기본 상태
   const [weekStart, setWeekStart]         = useState<Date>(() => getMonday(new Date()))
   const [schedules, setSchedules]         = useState<Schedule[]>([])
@@ -349,7 +355,7 @@ export default function SchedulePage() {
   const weekLabel = `${weekDays[0].getMonth() + 1}.${String(weekDays[0].getDate()).padStart(2, '0')} ~ ${weekDays[6].getMonth() + 1}.${String(weekDays[6].getDate()).padStart(2, '0')}`
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto overflow-x-hidden">
 
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-4">
@@ -382,7 +388,7 @@ export default function SchedulePage() {
       </div>
 
       {/* 주간 그리드 - 가로 스크롤 */}
-      <div className="overflow-x-auto pb-2 -mx-4 px-4" style={{ overscrollBehaviorX: 'none' }}>
+      <div className="overflow-x-auto pb-2 -mx-4 px-4" style={{ backgroundColor: pageBg, overscrollBehaviorX: 'none' }}>
         <div className="grid grid-cols-7 gap-1.5 min-w-[560px]">
           {weekDays.map((day, idx) => {
             const dateStr = toDateStr(day)

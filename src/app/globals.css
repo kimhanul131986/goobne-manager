@@ -13,6 +13,7 @@ body {
   min-height: 100dvh;
   background-color: #0a0a0a;
   overscroll-behavior: none;
+  overflow-x: hidden;
 }
 
 body {
