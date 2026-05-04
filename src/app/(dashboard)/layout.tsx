@@ -75,7 +75,7 @@ function InnerLayout({ profile, onLogout, children }: {
   const t = THEMES[themeKey]
 
   return (
-    <div className={`min-h-screen ${t.mainBg} text-white flex`} style={{ position: 'relative', overflowX: 'hidden', width: '100%' }}>
+    <div className={`min-h-screen ${t.mainBg} text-white flex w-full`}>
 
       {/* ── 데스크탑 사이드바 ── */}
       <aside className={`hidden md:flex flex-col w-56 shrink-0 ${t.sidebarBg} border-r ${t.border} min-h-screen fixed top-0 left-0`}>
@@ -155,7 +155,7 @@ function InnerLayout({ profile, onLogout, children }: {
       </aside>
 
       {/* ── 메인 콘텐츠 영역 ── */}
-      <div className={`flex-1 flex flex-col md:ml-56 ${t.mainBg}`} style={{ minHeight: '100dvh', minWidth: 0, overflowX: 'hidden' }}>
+      <div className={`flex-1 flex flex-col md:ml-56 min-h-dvh min-w-0 ${t.mainBg}`}>
 
         {/* 모바일 헤더 */}
         <header className={`md:hidden flex flex-col ${t.mobileBg} border-b ${t.border} sticky top-0 z-30`}>
