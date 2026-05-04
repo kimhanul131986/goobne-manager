@@ -218,7 +218,7 @@ export default function HandoverPage() {
       .single()
 
     if (error || !data) {
-      setFormError('작성 중 오류가 발생했습니다. 다시 시도해주세요.')
+      setFormError(`작성 중 오류가 발생했습니다. (${error?.message ?? '알 수 없는 오류'})`)
       setSubmitting(false)
       return
     }
