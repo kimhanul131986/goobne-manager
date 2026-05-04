@@ -24,10 +24,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" style={{ backgroundColor: '#0a0a0a' }}>
+    <html lang="ko" style={{ backgroundColor: '#0a0a0a', overflowX: 'hidden' }}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ backgroundColor: '#0a0a0a' }}
+        style={{ backgroundColor: '#0a0a0a', overflowX: 'hidden', minHeight: '100dvh' }}
       >
         {children}
       </body>

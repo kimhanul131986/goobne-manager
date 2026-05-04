@@ -22,7 +22,6 @@ interface StoreProfile {
   name: string
 }
 
-// 모달 mode
 type ModalMode = 'add' | 'edit' | null
 
 // ──────────────────────────────────────────
@@ -31,7 +30,7 @@ type ModalMode = 'add' | 'edit' | null
 function getMonday(date: Date): Date {
   const d = new Date(date)
   const day = d.getDay()
-  const diff = day === 0 ? -6 : 1 - day  // 일요일이면 -6, 아니면 월요일 기준
+  const diff = day === 0 ? -6 : 1 - day
   d.setDate(d.getDate() + diff)
   d.setHours(0, 0, 0, 0)
   return d
@@ -114,17 +113,12 @@ function ScheduleModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
-      {/* 딤 배경 */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-
-      {/* 모달 패널 */}
       <div className="relative w-full max-w-md bg-neutral-900 rounded-t-3xl md:rounded-2xl border border-neutral-700 p-6 z-10">
         <h3 className="text-base font-bold text-white mb-5">
           {mode === 'add' ? '스케줄 추가' : '스케줄 수정'}
         </h3>
-
         <div className="flex flex-col gap-4">
-          {/* 직원 선택 */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-neutral-400">직원</label>
             <select
@@ -138,8 +132,6 @@ function ScheduleModal({
               ))}
             </select>
           </div>
-
-          {/* 날짜 */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-neutral-400">날짜</label>
             <input
@@ -149,8 +141,6 @@ function ScheduleModal({
               className="rounded-xl bg-neutral-800 border border-neutral-700 text-sm text-white px-3 py-2.5 focus:outline-none focus:border-[#E8001D]/50"
             />
           </div>
-
-          {/* 시간 */}
           <div className="flex gap-3">
             <div className="flex-1 flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-neutral-400">출근</label>
@@ -171,11 +161,9 @@ function ScheduleModal({
               />
             </div>
           </div>
-
           {error && (
             <p className="text-xs text-red-400 bg-red-950/40 border border-red-900 rounded-xl px-3 py-2">{error}</p>
           )}
-
           <div className="flex gap-3 pt-1">
             <button
               onClick={onClose}
@@ -201,15 +189,9 @@ function ScheduleModal({
 // ──────────────────────────────────────────
 // 페이지 컴포넌트
 // ──────────────────────────────────────────
-const THEME_BG: Record<string, string> = {
-  dark: '#0a0a0a',
-  red:  '#120000',
-}
-
 export default function SchedulePage() {
   const { store } = useStore()
-  const pageBg = THEME_BG[store?.theme ?? 'dark']
-  // 기본 상태
+
   const [weekStart, setWeekStart]         = useState<Date>(() => getMonday(new Date()))
   const [schedules, setSchedules]         = useState<Schedule[]>([])
   const [storeProfiles, setStoreProfiles] = useState<StoreProfile[]>([])
@@ -218,15 +200,12 @@ export default function SchedulePage() {
   const [userId, setUserId]               = useState('')
   const [storeId, setStoreId]             = useState('')
 
-  // 모달 상태
-  const [modalMode, setModalMode]         = useState<ModalMode>(null)
-  const [modalDate, setModalDate]         = useState('')
-  const [editTarget, setEditTarget]       = useState<Schedule | undefined>()
+  const [modalMode, setModalMode]   = useState<ModalMode>(null)
+  const [modalDate, setModalDate]   = useState('')
+  const [editTarget, setEditTarget] = useState<Schedule | undefined>()
 
-  // 이번 주 날짜 배열
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 
-  // ── 초기 로드 ──
   useEffect(() => {
     if (!store) return
     setLoading(true)
@@ -245,7 +224,6 @@ export default function SchedulePage() {
       setRole(profile.role)
       setStoreId(store.id)
 
-      // 매장 직원 목록 (admin 모달용)
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, name')
@@ -258,7 +236,6 @@ export default function SchedulePage() {
     init()
   }, [store])
 
-  // ── 주간 스케줄 fetch ──
   const fetchSchedules = useCallback(async (start: Date, sid: string) => {
     const from = toDateStr(start)
     const to   = toDateStr(addDays(start, 6))
@@ -289,12 +266,10 @@ export default function SchedulePage() {
     fetchSchedules(weekStart, storeId)
   }, [weekStart, storeId, fetchSchedules])
 
-  // ── 주 이동 ──
   function prevWeek() { setWeekStart((d) => addDays(d, -7)) }
   function nextWeek() { setWeekStart((d) => addDays(d, +7)) }
   function goToday()  { setWeekStart(getMonday(new Date())) }
 
-  // ── 자가 확인 토글 ──
   async function handleConfirm(schedule: Schedule) {
     if (schedule.user_id !== userId) return
     const next = !schedule.is_confirmed
@@ -304,13 +279,11 @@ export default function SchedulePage() {
     )
   }
 
-  // ── 삭제 (admin) ──
   async function handleDelete(id: string) {
     await supabase.from('schedules').delete().eq('id', id)
     setSchedules((prev) => prev.filter((s) => s.id !== id))
   }
 
-  // ── 모달 열기 ──
   function openAdd(dateStr: string) {
     setModalDate(dateStr)
     setEditTarget(undefined)
@@ -323,26 +296,23 @@ export default function SchedulePage() {
     setModalMode('edit')
   }
 
-  // ── 날짜별 스케줄 그룹 ──
-  function schedulesFor(dateStr: string) {
-    return schedules.filter((s) => s.work_date === dateStr)
-  }
-
   const isThisWeek = toDateStr(weekStart) === toDateStr(getMonday(new Date()))
+
+  const weekLabel = `${weekDays[0].getMonth() + 1}.${String(weekDays[0].getDate()).padStart(2, '0')} ~ ${weekDays[6].getMonth() + 1}.${String(weekDays[6].getDate()).padStart(2, '0')}`
 
   // ──────────────────────────────────────────
   // 스켈레톤
   // ──────────────────────────────────────────
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-5">
+      <div className="max-w-lg mx-auto">
+        <div className="flex items-center justify-between mb-4">
           <Skeleton className="h-6 w-40" />
-          <Skeleton className="h-8 w-24 rounded-xl" />
+          <Skeleton className="h-8 w-20 rounded-xl" />
         </div>
-        <div className="grid grid-cols-7 gap-1.5">
+        <div className="flex flex-col gap-2">
           {Array.from({ length: 7 }).map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-2xl" />
+            <Skeleton key={i} className="h-14 rounded-2xl" />
           ))}
         </div>
       </div>
@@ -350,175 +320,151 @@ export default function SchedulePage() {
   }
 
   // ──────────────────────────────────────────
-  // 주간 달력
+  // 세로 주간 리스트
   // ──────────────────────────────────────────
-  const weekLabel = `${weekDays[0].getMonth() + 1}.${String(weekDays[0].getDate()).padStart(2, '0')} ~ ${weekDays[6].getMonth() + 1}.${String(weekDays[6].getDate()).padStart(2, '0')}`
-
   return (
-    <div className="max-w-3xl mx-auto overflow-x-hidden">
+    <div className="max-w-lg mx-auto">
 
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <button onClick={prevWeek} className="w-8 h-8 rounded-xl bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-neutral-400 hover:text-white transition-colors text-lg">
+          <button
+            onClick={prevWeek}
+            className="w-8 h-8 rounded-xl bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-neutral-400 hover:text-white transition-colors text-lg"
+          >
             ‹
           </button>
-          <div className="text-center min-w-[120px]">
-            <p className="text-sm font-bold text-white">{weekLabel}</p>
-          </div>
-          <button onClick={nextWeek} className="w-8 h-8 rounded-xl bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-neutral-400 hover:text-white transition-colors text-lg">
+          <p className="text-sm font-bold text-white min-w-[110px] text-center">{weekLabel}</p>
+          <button
+            onClick={nextWeek}
+            className="w-8 h-8 rounded-xl bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-neutral-400 hover:text-white transition-colors text-lg"
+          >
             ›
           </button>
           {!isThisWeek && (
-            <button onClick={goToday} className="text-xs text-[#E8001D] bg-[#E8001D]/10 rounded-xl px-3 py-1.5 hover:bg-[#E8001D]/20 transition-colors">
+            <button
+              onClick={goToday}
+              className="text-xs text-[#E8001D] bg-[#E8001D]/10 rounded-xl px-3 py-1.5 hover:bg-[#E8001D]/20 transition-colors"
+            >
               이번주
             </button>
           )}
         </div>
-
-        {/* 범례 */}
-        <div className="flex items-center gap-3 text-[10px] text-neutral-500">
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#E8001D] inline-block" />내 스케줄
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-neutral-500 inline-block" />타 직원
-          </span>
-        </div>
       </div>
 
-      {/* 주간 그리드 - 가로 스크롤 */}
-      <div className="overflow-x-auto pb-2 rounded-2xl" style={{ backgroundColor: pageBg }}>
-        <div className="grid grid-cols-7 gap-1.5 min-w-[560px]">
-          {weekDays.map((day, idx) => {
-            const dateStr = toDateStr(day)
-            const isToday = dateStr === TODAY_STR
-            const daySchedules = schedulesFor(dateStr)
-            const isWeekend = idx >= 5
+      {/* 7일 세로 리스트 */}
+      <div className="flex flex-col gap-2">
+        {weekDays.map((day, idx) => {
+          const dateStr    = toDateStr(day)
+          const isToday    = dateStr === TODAY_STR
+          const isWeekend  = idx >= 5
+          const daySchedules = schedules.filter((s) => s.work_date === dateStr)
+            .sort((a, b) => a.start_time.localeCompare(b.start_time))
 
-            return (
-              <div
-                key={dateStr}
-                className={`
-                  rounded-2xl border flex flex-col min-h-[140px]
-                  ${isToday ? 'border-[#E8001D]/40 bg-[#E8001D]/5' : 'border-neutral-800 bg-neutral-900'}
-                `}
-              >
-                {/* 날짜 헤더 */}
-                <div className={`
-                  flex flex-col items-center pt-2.5 pb-2 border-b
-                  ${isToday ? 'border-[#E8001D]/20' : 'border-neutral-800'}
-                `}>
-                  <p className={`text-[10px] font-semibold ${isWeekend ? 'text-orange-400' : 'text-neutral-500'}`}>
+          return (
+            <div
+              key={dateStr}
+              className={`
+                rounded-2xl border px-4 py-3
+                ${isToday
+                  ? 'border-[#E8001D]/40 bg-[#E8001D]/5'
+                  : 'border-neutral-800 bg-neutral-900'}
+              `}
+            >
+              {/* 날짜 행 */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold w-5 text-center ${
+                    isToday ? 'text-[#E8001D]' : isWeekend ? 'text-orange-400' : 'text-neutral-400'
+                  }`}>
                     {DOW[idx]}
-                  </p>
-                  <p className={`text-sm font-bold mt-0.5 ${isToday ? 'text-[#E8001D]' : 'text-white'}`}>
-                    {day.getDate()}
-                  </p>
+                  </span>
+                  <span className={`text-sm font-bold ${isToday ? 'text-[#E8001D]' : 'text-white'}`}>
+                    {day.getMonth() + 1}.{String(day.getDate()).padStart(2, '0')}
+                  </span>
+                  {isToday && (
+                    <span className="text-[10px] text-[#E8001D] bg-[#E8001D]/10 rounded-full px-2 py-0.5 font-semibold">
+                      오늘
+                    </span>
+                  )}
                 </div>
+                {role === 'admin' && (
+                  <button
+                    onClick={() => openAdd(dateStr)}
+                    className="text-[11px] text-neutral-500 hover:text-white bg-neutral-800 hover:bg-neutral-700 rounded-lg px-2.5 py-1 transition-colors"
+                  >
+                    + 추가
+                  </button>
+                )}
+              </div>
 
-                {/* 스케줄 목록 */}
-                <div className="flex flex-col gap-1 p-1.5 flex-1">
+              {/* 스케줄 없음 */}
+              {daySchedules.length === 0 && (
+                <p className="text-[11px] text-neutral-700 pl-7">스케줄 없음</p>
+              )}
+
+              {/* 스케줄 목록 */}
+              {daySchedules.length > 0 && (
+                <div className="flex flex-col gap-1.5 pl-7">
                   {daySchedules.map((s) => {
                     const isMine = s.user_id === userId
                     return (
-                      <button
+                      <div
                         key={s.id}
-                        onClick={() => {
-                          if (isMine) handleConfirm(s)
-                          else if (role === 'admin') openEdit(s)
-                        }}
                         className={`
-                          w-full text-left rounded-xl px-1.5 py-1.5 transition-all active:scale-95
-                          ${isMine
-                            ? 'bg-[#E8001D]/20 hover:bg-[#E8001D]/30'
-                            : 'bg-neutral-800 hover:bg-neutral-700'}
+                          flex items-center justify-between rounded-xl px-3 py-2
+                          ${isMine ? 'bg-[#E8001D]/15' : 'bg-neutral-800/60'}
                         `}
                       >
-                        {/* 이름 + 확인 아이콘 */}
-                        <div className="flex items-center justify-between gap-0.5">
-                          <p className={`text-[10px] font-semibold truncate ${isMine ? 'text-[#E8001D]' : 'text-neutral-300'}`}>
+                        {/* 이름 + 시간 */}
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`text-xs font-semibold truncate ${isMine ? 'text-[#E8001D]' : 'text-neutral-300'}`}>
                             {s.user_name}
-                          </p>
-                          {isMine && s.is_confirmed && (
-                            <svg className="w-3 h-3 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
+                          </span>
+                          <span className={`text-[11px] shrink-0 ${isMine ? 'text-[#E8001D]/70' : 'text-neutral-500'}`}>
+                            {fmt(s.start_time)}~{fmt(s.end_time)}
+                          </span>
+                        </div>
+
+                        {/* 오른쪽 액션 */}
+                        <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                          {isMine && (
+                            s.is_confirmed ? (
+                              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 rounded-full px-2 py-0.5">확인됨</span>
+                            ) : (
+                              <button
+                                onClick={() => handleConfirm(s)}
+                                className="text-[10px] text-neutral-500 bg-neutral-800 hover:bg-neutral-700 rounded-full px-2 py-0.5 transition-colors active:scale-95"
+                              >
+                                확인하기
+                              </button>
+                            )
+                          )}
+                          {role === 'admin' && (
+                            <button
+                              onClick={() => openEdit(s)}
+                              className="text-[10px] text-neutral-600 hover:text-neutral-300 transition-colors px-1"
+                            >
+                              수정
+                            </button>
+                          )}
+                          {role === 'admin' && (
+                            <button
+                              onClick={() => handleDelete(s.id)}
+                              className="text-[10px] text-neutral-700 hover:text-red-400 transition-colors px-1"
+                            >
+                              삭제
+                            </button>
                           )}
                         </div>
-                        <p className={`text-[9px] mt-0.5 ${isMine ? 'text-[#E8001D]/70' : 'text-neutral-500'}`}>
-                          {fmt(s.start_time)}~{fmt(s.end_time)}
-                        </p>
-                        {/* admin 삭제 버튼 */}
-                        {role === 'admin' && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDelete(s.id) }}
-                            className="mt-0.5 text-[9px] text-neutral-600 hover:text-red-400 transition-colors"
-                          >
-                            삭제
-                          </button>
-                        )}
-                      </button>
+                      </div>
                     )
                   })}
-
-                  {/* 추가 버튼 (admin) */}
-                  {role === 'admin' && (
-                    <button
-                      onClick={() => openAdd(dateStr)}
-                      className="w-full mt-auto rounded-xl border border-dashed border-neutral-700 hover:border-neutral-500 text-neutral-700 hover:text-neutral-400 py-1 text-[10px] transition-colors"
-                    >
-                      +
-                    </button>
-                  )}
                 </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* 주간 요약 */}
-      <div className="mt-5 bg-neutral-900 rounded-2xl border border-neutral-800 px-5 py-4">
-        <p className="text-xs font-semibold text-neutral-400 mb-3">이번 주 내 스케줄</p>
-        {schedules.filter((s) => s.user_id === userId).length === 0 ? (
-          <p className="text-xs text-neutral-600">등록된 스케줄이 없습니다.</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {schedules
-              .filter((s) => s.user_id === userId)
-              .sort((a, b) => a.work_date.localeCompare(b.work_date))
-              .map((s) => {
-                const d = new Date(s.work_date + 'T00:00:00')
-                const dowIdx = d.getDay()
-                const dowStr = DOW[dowIdx === 0 ? 6 : dowIdx - 1]
-                return (
-                  <div key={s.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-neutral-400">
-                        {s.work_date.slice(5).replace('-', '.')} ({dowStr})
-                      </span>
-                      <span className="text-xs text-white font-medium">
-                        {fmt(s.start_time)} ~ {fmt(s.end_time)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {s.is_confirmed ? (
-                        <span className="text-[10px] text-emerald-400 bg-emerald-500/10 rounded-full px-2 py-0.5">확인됨</span>
-                      ) : (
-                        <button
-                          onClick={() => handleConfirm(s)}
-                          className="text-[10px] text-neutral-500 bg-neutral-800 hover:bg-neutral-700 rounded-full px-2 py-0.5 transition-colors"
-                        >
-                          확인하기
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-          </div>
-        )}
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {/* 스케줄 추가/수정 모달 */}
