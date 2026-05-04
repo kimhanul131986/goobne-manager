@@ -273,43 +273,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           setProfile({ name: profileData.name, role: profileData.role })
         }
 
+        // 하드코딩 폴백 (DB 조회 실패 시에도 동작 보장)
+        const HARDCODED_STORES: StoreInfo[] = [
+          { id: 'a279d0fb-9fef-4fb8-a472-43c153a56fc5', name: '성산점', theme: 'dark' },
+          { id: '7cf30fca-9d3c-4c55-a937-bcc7d6a4697a', name: '홍대점', theme: 'red' },
+        ]
+
         // 모든 매장 로드 (추후 권한 기반으로 필터 가능)
-        const { data: storeRows } = await supabase
+        const { data: storeRows, error: storeError } = await supabase
           .from('stores')
           .select('id, name')
           .order('name')
 
         if (!mounted) return
 
+        // DB에서 읽어온 게 있으면 우선 사용, 없으면 하드코딩 폴백
+        let mapped: StoreInfo[]
         if (storeRows && storeRows.length > 0) {
-          const mapped: StoreInfo[] = storeRows.map((s: any) => ({
+          mapped = storeRows.map((s: any) => ({
             id: s.id,
             name: s.name,
             theme: s.name.includes('홍대') ? 'red' : 'dark',
           }))
-          setStores(mapped)
-
-          // localStorage에서 선택된 매장 복원, 없으면 첫 번째
-          let selected = mapped[0]
-          try {
-            const saved = localStorage.getItem('goobne_store')
-            if (saved) {
-              const parsed = JSON.parse(saved)
-              const found = mapped.find((s) => s.id === parsed.id)
-              if (found) selected = found
-            }
-          } catch {}
-          setInitialStore(selected)
-        } else if (profileData?.store_id) {
-          // stores 테이블 조회 실패 시 프로필의 store_id로 폴백
-          const fallback: StoreInfo = {
-            id: profileData.store_id,
-            name: '성산점',
-            theme: 'dark',
-          }
-          setStores([fallback])
-          setInitialStore(fallback)
+        } else {
+          console.warn('stores query returned empty, using hardcoded fallback. Error:', storeError)
+          mapped = HARDCODED_STORES
         }
+
+        setStores(mapped)
+
+        // localStorage에서 선택된 매장 복원, 없으면 첫 번째
+        let selected = mapped[0]
+        try {
+          const saved = localStorage.getItem('goobne_store')
+          if (saved) {
+            const parsed = JSON.parse(saved)
+            const found = mapped.find((s) => s.id === parsed.id)
+            if (found) selected = found
+          }
+        } catch {}
+        setInitialStore(selected)
       } catch (e) {
         console.error('init error', e)
       } finally {
