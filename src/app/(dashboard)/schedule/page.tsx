@@ -382,7 +382,7 @@ export default function SchedulePage() {
       </div>
 
       {/* 주간 그리드 - 가로 스크롤 */}
-      <div className="overflow-x-auto pb-2 -mx-4 px-4">
+      <div className="overflow-x-auto pb-2 -mx-4 px-4" style={{ overscrollBehaviorX: 'none' }}>
         <div className="grid grid-cols-7 gap-1.5 min-w-[560px]">
           {weekDays.map((day, idx) => {
             const dateStr = toDateStr(day)
