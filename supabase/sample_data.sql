@@ -5,10 +5,15 @@
 
 DO $$
 DECLARE
-  uid   uuid := 'd9eb3955-a212-4f7d-b425-0cb4bddeca3c';  -- 테스트 유저
+  uid   uuid;
   sid   uuid := 'a279d0fb-9fef-4fb8-a472-43c153a56fc5';  -- 성산점
   sid2  uuid := '7cf30fca-9d3c-4c55-a937-bcc7d6a4697a';  -- 홍대점
 BEGIN
+  -- 실제 가입된 첫 번째 유저 ID 자동 조회
+  SELECT id INTO uid FROM auth.users LIMIT 1;
+  IF uid IS NULL THEN
+    RAISE EXCEPTION '가입된 유저가 없습니다. 먼저 로그인(회원가입)을 완료해주세요.';
+  END IF;
 
 -- ── stores 보장 ───────────────────────────────
 INSERT INTO stores (id, name) VALUES
