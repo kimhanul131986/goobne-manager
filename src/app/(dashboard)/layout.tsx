@@ -155,7 +155,7 @@ function InnerLayout({ profile, onLogout, children }: {
       </aside>
 
       {/* ── 메인 콘텐츠 영역 ── */}
-      <div className="flex-1 flex flex-col md:ml-56 min-h-screen">
+      <div className={`flex-1 flex flex-col md:ml-56 min-h-screen w-0 min-w-0 ${t.mainBg}`}>
 
         {/* 모바일 헤더 */}
         <header className={`md:hidden flex flex-col ${t.mobileBg} border-b ${t.border} sticky top-0 z-30`}>
@@ -210,7 +210,7 @@ function InnerLayout({ profile, onLogout, children }: {
         </header>
 
         {/* 페이지 콘텐츠 */}
-        <main className="flex-1 px-4 py-5 md:px-6 md:py-6 pb-24 md:pb-6">
+        <main className="flex-1 overflow-x-hidden px-4 py-5 md:px-6 md:py-6 pb-24 md:pb-6">
           {children}
         </main>
       </div>
