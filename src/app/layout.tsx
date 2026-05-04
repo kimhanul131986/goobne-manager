@@ -27,7 +27,7 @@ export default function RootLayout({
     <html lang="ko" style={{ backgroundColor: '#0a0a0a', overflowX: 'hidden' }}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ backgroundColor: '#0a0a0a', overflowX: 'hidden', minHeight: '100dvh' }}
+        style={{ backgroundColor: '#0a0a0a' }}
       >
         {children}
       </body>
