@@ -82,7 +82,7 @@ CREATE POLICY "checklist_logs_select" ON checklist_logs
 CREATE POLICY "checklist_logs_insert" ON checklist_logs
   FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "checklist_logs_delete" ON checklist_logs
-  FOR DELETE TO authenticated USING (auth.uid() = checked_by);
+  FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
 -- ── schedules ──────────────────────────────
 ALTER TABLE schedules ENABLE ROW LEVEL SECURITY;
