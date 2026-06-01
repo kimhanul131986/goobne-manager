@@ -16,10 +16,22 @@ export default function LoginPage() {
     setError(null)
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    let authError: any = null
+    try {
+      console.log('로그인 시도:', email)
+      console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+      const result = await supabase.auth.signInWithPassword({ email, password })
+      console.log('결과:', result)
+      authError = result.error
+    } catch (e: any) {
+      console.error('예외 발생:', e)
+      setError(e?.message ?? '로그인 중 오류가 발생했습니다.')
+      setLoading(false)
+      return
+    }
 
-    if (error) {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+    if (authError) {
+      setError(authError.message ?? '이메일 또는 비밀번호가 올바르지 않습니다.')
       setLoading(false)
       return
     }
