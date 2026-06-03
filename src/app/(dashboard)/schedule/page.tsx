@@ -701,7 +701,7 @@ export default function SchedulePage() {
       {storeProfiles.length === 0 ? (
         <p className="text-[11px] text-neutral-600 text-center py-10">등록된 직원이 없습니다.</p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-neutral-800 [-webkit-overflow-scrolling:touch]">
+        <div className="overflow-auto max-h-[calc(100dvh-16rem)] md:max-h-[calc(100dvh-11rem)] rounded-2xl border border-neutral-800 [-webkit-overflow-scrolling:touch]">
           <table className="w-full border-collapse text-center">
             <thead>
               <tr>
