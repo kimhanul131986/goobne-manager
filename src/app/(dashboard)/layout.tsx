@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: '/manuals',    label: '매뉴얼',     icon: '📖' },
   { href: '/handover',   label: '인수인계',   icon: '🔄' },
   { href: '/incidents',  label: '이슈신고',   icon: '⚠️' },
+  { href: '/staff',      label: '직원',       icon: '👥' },
 ]
 
 const TAB_ITEMS = NAV_ITEMS.slice(0, 5)
@@ -70,6 +71,7 @@ function InnerLayout({ profile, onLogout, children }: {
 }) {
   const pathname = usePathname()
   const { store, stores, switchStore } = useStore()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const themeKey = store?.theme ?? 'dark'
   const t = THEMES[themeKey]
@@ -188,12 +190,20 @@ function InnerLayout({ profile, onLogout, children }: {
               </p>
               <p className="text-[10px] text-neutral-500">{store?.name ?? ''} 매장관리</p>
             </div>
-            <button
-              onClick={onLogout}
-              className={`text-xs text-neutral-400 ${t.btnBg} rounded-lg px-3 py-1.5 active:scale-95 transition-transform`}
-            >
-              로그아웃
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setMenuOpen(true)}
+                className={`text-xs text-neutral-300 ${t.btnBg} rounded-lg px-3 py-1.5 active:scale-95 transition-transform`}
+              >
+                ☰ 메뉴
+              </button>
+              <button
+                onClick={onLogout}
+                className={`text-xs text-neutral-400 ${t.btnBg} rounded-lg px-3 py-1.5 active:scale-95 transition-transform`}
+              >
+                로그아웃
+              </button>
+            </div>
           </div>
         </header>
 
@@ -238,6 +248,40 @@ function InnerLayout({ profile, onLogout, children }: {
           )
         })}
       </nav>
+
+      {/* ── 모바일 전체 메뉴 시트 ── */}
+      {menuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex items-end">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
+          <div className={`relative w-full ${t.mobileBg} rounded-t-3xl border-t ${t.border} p-5 z-10 max-h-[80vh] overflow-y-auto`}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-bold text-white">전체 메뉴</p>
+              <button onClick={() => setMenuOpen(false)} className="text-neutral-500 text-lg px-2">✕</button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {NAV_ITEMS.map((item) => {
+                const isActive =
+                  item.href === '/dashboard'
+                    ? pathname === '/dashboard'
+                    : pathname.startsWith(item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMenuOpen(false)}
+                    className={`flex items-center gap-2.5 px-3 py-3 rounded-xl text-sm font-medium transition-colors ${
+                      isActive ? t.activeNav : `text-neutral-300 ${t.btnBg}`
+                    }`}
+                  >
+                    <span className="text-lg leading-none">{item.icon}</span>
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

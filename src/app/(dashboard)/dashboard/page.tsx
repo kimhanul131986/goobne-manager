@@ -313,7 +313,7 @@ export default function DashboardPage() {
             { href: '/orders',  icon: '📦', label: '발주' },
             { href: '/manuals', icon: '📖', label: '매뉴얼' },
             { href: '/handover', icon: '🔄', label: '인수인계' },
-            { href: '/incidents', icon: '⚠️', label: '이슈신고' },
+            { href: '/staff', icon: '👥', label: '직원' },
           ].map((item) => (
             <button
               key={item.href}
