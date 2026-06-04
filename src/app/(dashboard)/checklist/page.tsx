@@ -176,7 +176,9 @@ export default function ChecklistPage() {
       .select()
       .single()
 
-    if (!error && data) {
+    if (error) {
+      alert('추가 실패: ' + error.message)
+    } else if (data) {
       setItems((prev) => ({
         ...prev,
         [activeTab]: [
