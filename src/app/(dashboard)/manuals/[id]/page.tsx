@@ -455,10 +455,35 @@ export default function ManualDetailPage() {
         </div>
 
         {/* 본문 */}
-        <div className="px-5 py-5">
-          <p className="text-sm text-neutral-200 leading-relaxed whitespace-pre-wrap">
-            {manual?.content}
-          </p>
+        <div className="px-5 py-5 flex flex-col gap-3">
+          {manual?.content.split('\n').map((line, i) => {
+            const imgMatch = line.match(/^\[IMG:(https?:\/\/.+)\]$/)
+            if (imgMatch) {
+              return (
+                <img
+                  key={i}
+                  src={imgMatch[1]}
+                  alt=""
+                  className="w-full rounded-xl object-cover"
+                />
+              )
+            }
+            if (line === '') return <div key={i} className="h-1" />
+            return (
+              <p
+                key={i}
+                className={`text-sm leading-relaxed ${
+                  line.startsWith('※') || line.startsWith('*')
+                    ? 'text-orange-300'
+                    : line.startsWith('[') && line.endsWith(']')
+                    ? 'text-white font-bold text-base mt-2'
+                    : 'text-neutral-200'
+                }`}
+              >
+                {line}
+              </p>
+            )
+          })}
         </div>
       </article>
     </div>
