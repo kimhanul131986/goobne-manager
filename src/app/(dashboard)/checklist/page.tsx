@@ -3,6 +3,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useStore } from '@/lib/store-context'
+import {
+  DndContext, closestCenter, PointerSensor, TouchSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext, verticalListSortingStrategy,
+  useSortable, arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 // ──────────────────────────────────────────
 // 타입
@@ -33,6 +42,91 @@ function ymd(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
+// ──────────────────────────────────────────
+// 정렬 가능한 항목 컴포넌트
+// ──────────────────────────────────────────
+function SortableItem({
+  item, isAdmin, onCheck, onDelete,
+}: {
+  item: CheckItem
+  isAdmin: boolean
+  onCheck: (id: string, done: boolean) => void
+  onDelete: (id: string) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: item.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <li ref={setNodeRef} style={style}>
+      <div
+        className={`
+          flex items-start gap-3 rounded-2xl px-4 py-4 border transition-all
+          ${item.isDone ? 'bg-neutral-900/50 border-neutral-800/50' : 'bg-neutral-900 border-neutral-800'}
+        `}
+      >
+        {/* 드래그 핸들 (admin) */}
+        {isAdmin && (
+          <button
+            {...attributes}
+            {...listeners}
+            className="shrink-0 mt-0.5 text-neutral-600 hover:text-neutral-400 cursor-grab active:cursor-grabbing touch-none"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <rect y="2" width="14" height="1.5" rx="1"/>
+              <rect y="6" width="14" height="1.5" rx="1"/>
+              <rect y="10" width="14" height="1.5" rx="1"/>
+            </svg>
+          </button>
+        )}
+
+        {/* 체크박스 */}
+        <button
+          onClick={() => onCheck(item.id, item.isDone)}
+          className={`
+            shrink-0 mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
+            ${item.isDone ? 'border-emerald-500 bg-emerald-500' : 'border-neutral-600 hover:border-[#E8001D]'}
+          `}
+        >
+          {item.isDone && (
+            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </button>
+
+        {/* 텍스트 */}
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm leading-snug ${item.isDone ? 'line-through text-neutral-500' : 'text-white'}`}>
+            {item.title}
+          </p>
+          {item.isDone && item.doneAt && (
+            <p className="text-[10px] text-neutral-600 mt-0.5">
+              {item.doneByName ?? '나'} ·{' '}
+              {new Date(item.doneAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          )}
+        </div>
+
+        {/* 삭제 버튼 (admin) */}
+        {isAdmin && (
+          <button
+            onClick={() => onDelete(item.id)}
+            className="shrink-0 text-neutral-700 hover:text-red-400 transition-colors text-lg leading-none mt-0.5"
+          >
+            ×
+          </button>
+        )}
+      </div>
+    </li>
+  )
+}
+
 const TABS: Category[] = ['매일', '오픈', '마감']
 
 const TAB_ICON: Record<Category, string> = {
@@ -60,6 +154,12 @@ export default function ChecklistPage() {
   const addInputRef = useRef<HTMLInputElement>(null)
 
   const today = ymd(new Date())
+  const isAdmin = role === 'admin'
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  )
 
   // ── 초기 로드 ──
   useEffect(() => {
@@ -202,15 +302,32 @@ export default function ChecklistPage() {
 
   // ── 항목 삭제 (admin) ──
   async function handleDelete(templateId: string) {
-    await supabase
-      .from('checklist_templates')
-      .delete()
-      .eq('id', templateId)
-
+    await supabase.from('checklist_templates').delete().eq('id', templateId)
     setItems((prev) => ({
       ...prev,
       [activeTab]: prev[activeTab].filter((i) => i.id !== templateId),
     }))
+  }
+
+  // ── 순서 변경 (admin 드래그) ──
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const current = items[activeTab]
+    const oldIdx = current.findIndex((i) => i.id === active.id)
+    const newIdx = current.findIndex((i) => i.id === over.id)
+    const reordered = arrayMove(current, oldIdx, newIdx)
+
+    // 낙관적 업데이트
+    setItems((prev) => ({ ...prev, [activeTab]: reordered }))
+
+    // DB에 order_num 일괄 업데이트
+    await Promise.all(
+      reordered.map((item, idx) =>
+        supabase.from('checklist_templates').update({ order_num: idx + 1 }).eq('id', item.id)
+      )
+    )
   }
 
   const currentItems = items[activeTab]
@@ -326,67 +443,25 @@ export default function ChecklistPage() {
           {activeTab} 체크리스트 항목이 없습니다.
         </div>
       ) : (
-        <ul className="flex flex-col gap-2 mb-4">
-          {currentItems.map((item) => (
-            <li key={item.id}>
-              <div
-                className={`
-                  flex items-start gap-3 rounded-2xl px-4 py-4 border transition-all
-                  ${item.isDone
-                    ? 'bg-neutral-900/50 border-neutral-800/50'
-                    : 'bg-neutral-900 border-neutral-800'}
-                `}
-              >
-                {/* 체크박스 */}
-                <button
-                  onClick={() => handleCheck(item.id, item.isDone)}
-                  className={`
-                    shrink-0 mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
-                    ${item.isDone
-                      ? 'border-emerald-500 bg-emerald-500'
-                      : 'border-neutral-600 hover:border-[#E8001D]'}
-                  `}
-                >
-                  {item.isDone && (
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-
-                {/* 텍스트 */}
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm leading-snug ${item.isDone ? 'line-through text-neutral-500' : 'text-white'}`}>
-                    {item.title}
-                  </p>
-                  {item.isDone && item.doneAt && (
-                    <p className="text-[10px] text-neutral-600 mt-0.5">
-                      {item.doneByName ?? '나'} ·{' '}
-                      {new Date(item.doneAt).toLocaleTimeString('ko-KR', {
-                        hour: '2-digit', minute: '2-digit',
-                      })}
-                    </p>
-                  )}
-                </div>
-
-                {/* 삭제 버튼 (admin) */}
-                {role === 'admin' && (
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="shrink-0 text-neutral-700 hover:text-red-400 transition-colors text-lg leading-none mt-0.5"
-                    title="항목 삭제"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={currentItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+            <ul className="flex flex-col gap-2 mb-4">
+              {currentItems.map((item) => (
+                <SortableItem
+                  key={item.id}
+                  item={item}
+                  isAdmin={isAdmin}
+                  onCheck={handleCheck}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* 항목 추가 (admin) */}
-      {role === 'admin' && (
+      {isAdmin && (
         <div className="bg-neutral-900 rounded-2xl border border-dashed border-neutral-700 p-4">
           <p className="text-xs text-neutral-500 mb-2">
             {activeTab} 항목 추가
