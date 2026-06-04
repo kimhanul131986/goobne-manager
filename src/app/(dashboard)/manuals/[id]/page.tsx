@@ -207,6 +207,17 @@ export default function ManualDetailPage() {
   // ──────────────────────────────────────────
   const canWrite = role === 'admin' || role === 'manager'
 
+  async function handleDeleteDoc() {
+    if (!window.confirm('매뉴얼을 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return
+    setSaving(true)
+    if (manual?.image_url) {
+      const path = manual.image_url.split(`${STORAGE_BUCKET}/`)[1]
+      if (path) await supabase.storage.from(STORAGE_BUCKET).remove([path])
+    }
+    await supabase.from('manuals').delete().eq('id', id)
+    router.replace('/manuals')
+  }
+
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto">
@@ -370,13 +381,24 @@ export default function ManualDetailPage() {
   return (
     <div className="max-w-2xl mx-auto">
 
-      {/* 뒤로가기 */}
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 mb-5 transition-colors"
-      >
-        ← 목록으로
-      </button>
+      {/* 뒤로가기 + 삭제 */}
+      <div className="flex items-center justify-between mb-5">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+        >
+          ← 목록으로
+        </button>
+        {canWrite && (
+          <button
+            onClick={handleDeleteDoc}
+            disabled={saving}
+            className="text-xs text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
+          >
+            {saving ? '삭제 중…' : '삭제'}
+          </button>
+        )}
+      </div>
 
       <article className="bg-neutral-900 rounded-2xl border border-neutral-800 overflow-hidden">
 

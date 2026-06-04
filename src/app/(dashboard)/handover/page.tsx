@@ -72,10 +72,11 @@ function groupByDate(list: Handover[]): { dateLabel: string; dateKey: string; it
 interface CardProps {
   item: Handover
   isMine: boolean
+  isAdmin: boolean
   onDelete: (id: string) => void
 }
 
-function HandoverCard({ item, isMine, onDelete }: CardProps) {
+function HandoverCard({ item, isMine, isAdmin, onDelete }: CardProps) {
   const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const style = SHIFT_STYLE[item.shift]
@@ -99,7 +100,7 @@ function HandoverCard({ item, isMine, onDelete }: CardProps) {
           <span className="text-neutral-600 text-xs">·</span>
           <span className="text-xs text-neutral-500">{formatTime(item.created_at)}</span>
         </div>
-        {isMine && (
+        {(isMine || isAdmin) && (
           <button
             onClick={handleDelete}
             disabled={deleting}
@@ -137,6 +138,7 @@ export default function HandoverPage() {
   const [userId, setUserId] = useState('')
   const [userName, setUserName] = useState('')
   const [storeId, setStoreId] = useState('')
+  const [role, setRole] = useState('')
 
   // 작성 폼
   const [shift, setShift]     = useState<Shift>('오픈')
@@ -161,12 +163,13 @@ export default function HandoverPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('name')
+        .select('name, role')
         .eq('id', uid)
         .single()
 
       if (!profile) { setLoading(false); return }
       setUserName(profile.name)
+      setRole(profile.role ?? '')
       setStoreId(store.id)
 
       await fetchHandovers(store.id)
@@ -381,6 +384,7 @@ export default function HandoverPage() {
                       key={item.id}
                       item={item}
                       isMine={item.created_by === userId}
+                      isAdmin={role === 'admin' || role === 'manager'}
                       onDelete={handleDelete}
                     />
                   ))}

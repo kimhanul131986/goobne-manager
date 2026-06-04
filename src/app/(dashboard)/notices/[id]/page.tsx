@@ -22,6 +22,8 @@ export default function NoticeDetailPage() {
   const [notice, setNotice] = useState<NoticeDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [role, setRole] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     async function fetchNotice() {
@@ -29,22 +31,21 @@ export default function NoticeDetailPage() {
       if (!user) { setLoading(false); return }
       const userId = user.id
 
-      // 공지 상세
-      const { data, error } = await supabase
-        .from('notices')
-        .select('id, title, content, created_at, profiles(name, role)')
-        .eq('id', id)
-        .single()
+      const [{ data }, { data: profile }] = await Promise.all([
+        supabase
+          .from('notices')
+          .select('id, title, content, created_at, profiles(name, role)')
+          .eq('id', id)
+          .single(),
+        supabase.from('profiles').select('role').eq('id', userId).single(),
+      ])
 
-      if (error || !data) {
-        setNotFound(true)
-        setLoading(false)
-        return
-      }
+      if (!data) { setNotFound(true); setLoading(false); return }
 
       setNotice(data as any)
+      setRole(profile?.role ?? null)
 
-      // 읽음 처리: 이미 있으면 무시 (UNIQUE 제약 덕분에 중복 방지)
+      // 읽음 처리
       await supabase
         .from('notice_checks')
         .upsert(
@@ -57,6 +58,14 @@ export default function NoticeDetailPage() {
 
     fetchNotice()
   }, [id, router])
+
+  async function handleDelete() {
+    if (!window.confirm('공지를 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return
+    setDeleting(true)
+    await supabase.from('notice_checks').delete().eq('notice_id', id)
+    await supabase.from('notices').delete().eq('id', id)
+    router.replace('/notices')
+  }
 
   const ROLE_LABEL: Record<string, string> = {
     admin: '관리자',
@@ -92,13 +101,24 @@ export default function NoticeDetailPage() {
   return (
     <div className="max-w-2xl mx-auto">
 
-      {/* 뒤로가기 */}
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 mb-5 transition-colors"
-      >
-        ← 목록으로
-      </button>
+      {/* 뒤로가기 + 삭제 */}
+      <div className="flex items-center justify-between mb-5">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+        >
+          ← 목록으로
+        </button>
+        {(role === 'admin' || role === 'manager') && (
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="text-xs text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
+          >
+            {deleting ? '삭제 중…' : '삭제'}
+          </button>
+        )}
+      </div>
 
       {/* 공지 카드 */}
       <article className="bg-neutral-900 rounded-2xl border border-neutral-800 overflow-hidden">
