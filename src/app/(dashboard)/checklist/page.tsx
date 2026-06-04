@@ -25,6 +25,14 @@ function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse rounded-lg bg-neutral-800 ${className ?? ''}`} />
 }
 
+// KST 안전: 로컬(한국) 기준 YYYY-MM-DD (UTC toISOString 쓰면 새벽 0~9시에 어제로 잡힘)
+function ymd(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 const TABS: Category[] = ['오픈', '마감', '청소']
 
 const TAB_ICON: Record<Category, string> = {
@@ -51,7 +59,7 @@ export default function ChecklistPage() {
   const [addingLoading, setAddingLoading] = useState(false)
   const addInputRef = useRef<HTMLInputElement>(null)
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = ymd(new Date())
 
   // ── 초기 로드 ──
   useEffect(() => {
@@ -73,13 +81,13 @@ export default function ChecklistPage() {
       setRole(profile.role)
       setStoreId(store.id)
 
-      await fetchAll(store.id, uid)
+      await fetchAll(store.id)
       setLoading(false)
     }
     load()
   }, [store])
 
-  async function fetchAll(sid: string, uid: string) {
+  async function fetchAll(sid: string) {
     // 전체 템플릿
     const { data: templates } = await supabase
       .from('checklist_templates')
@@ -87,12 +95,15 @@ export default function ChecklistPage() {
       .eq('store_id', sid)
       .order('order_num')
 
-    // 오늘 내 완료 기록 + 완료자 이름
-    const { data: logs } = await supabase
-      .from('checklist_logs')
-      .select('template_id, done_at, profiles(name)')
-      .eq('user_id', uid)
-      .eq('log_date', today)
+    // 오늘 이 매장의 완료 기록 (누가 체크했든 매장 단위로 공유) + 완료자 이름
+    const templateIds = (templates ?? []).map((t) => t.id)
+    const { data: logs } = templateIds.length
+      ? await supabase
+          .from('checklist_logs')
+          .select('template_id, done_at, profiles(name)')
+          .in('template_id', templateIds)
+          .eq('log_date', today)
+      : { data: [] as any[] }
 
     const doneMap = new Map<string, { done_at: string; name: string | null }>(
       (logs ?? []).map((l: any) => [
@@ -123,15 +134,14 @@ export default function ChecklistPage() {
   // ── 체크/언체크 ──
   async function handleCheck(templateId: string, currentDone: boolean) {
     if (currentDone) {
-      // 취소: 오늘 기록 삭제
+      // 취소: 오늘 이 매장의 기록 삭제 (누가 체크했든 매장 단위로 해제)
       await supabase
         .from('checklist_logs')
         .delete()
         .eq('template_id', templateId)
-        .eq('user_id', userId)
         .eq('log_date', today)
     } else {
-      // 완료: 기록 추가
+      // 완료: 기록 추가 (체크한 사람을 함께 기록)
       await supabase.from('checklist_logs').upsert(
         {
           template_id: templateId,
@@ -143,8 +153,8 @@ export default function ChecklistPage() {
       )
     }
 
-    // 낙관적 업데이트 + 재fetch
-    await fetchAll(storeId, userId)
+    // 재fetch
+    await fetchAll(storeId)
   }
 
   // ── 항목 추가 (admin) ──

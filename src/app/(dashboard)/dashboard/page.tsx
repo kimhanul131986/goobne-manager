@@ -103,12 +103,22 @@ export default function DashboardPage() {
           .eq('store_id', storeId)
           .is('notice_checks.id', null),
 
-        // 오늘 미완료 체크리스트
-        supabase
-          .from('checklist_templates')
-          .select('id, checklist_logs!left(id)', { count: 'exact' })
-          .eq('store_id', storeId)
-          .is('checklist_logs.id', null),
+        // 오늘 미완료 체크리스트 = 전체 항목 − 오늘 완료된 항목(매장 단위)
+        (async () => {
+          const [{ count: total }, { data: doneLogs }] = await Promise.all([
+            supabase
+              .from('checklist_templates')
+              .select('id', { count: 'exact', head: true })
+              .eq('store_id', storeId),
+            supabase
+              .from('checklist_logs')
+              .select('template_id, checklist_templates!inner(store_id)')
+              .eq('checklist_templates.store_id', storeId)
+              .eq('log_date', today.dateStr),
+          ])
+          const done = new Set((doneLogs ?? []).map((l: any) => l.template_id)).size
+          return Math.max(0, (total ?? 0) - done)
+        })(),
 
         // 오늘 본인 스케줄
         supabase
@@ -142,7 +152,7 @@ export default function DashboardPage() {
         storeId,
         userId,
         unreadNotices: noticesRes.count ?? 0,
-        incompleteChecklists: checklistRes.count ?? 0,
+        incompleteChecklists: checklistRes,
         todaySchedule: scheduleRes.data ?? null,
         latestHandover: handoverRes.data ?? null,
         unresolvedIncidents: incidentsRes.count ?? 0,
