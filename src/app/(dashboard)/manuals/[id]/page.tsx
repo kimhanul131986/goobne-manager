@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 // ──────────────────────────────────────────
 // 타입
 // ──────────────────────────────────────────
-type Category = '레시피' | '청소' | '오픈마감'
+type Category = '운영' | '레시피' | '청소'
 
 interface ManualDetail {
   id: string
@@ -28,7 +28,7 @@ function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse rounded-lg bg-neutral-800 ${className ?? ''}`} />
 }
 
-const CATEGORY_ICON: Record<Category, string> = { 레시피: '🍗', 청소: '🧹', 오픈마감: '🔑' }
+const CATEGORY_ICON: Record<Category, string> = { 운영: '🖥️', 레시피: '🍗', 청소: '🧹' }
 const STORAGE_BUCKET = 'manual-images'
 
 // ──────────────────────────────────────────
@@ -260,7 +260,7 @@ export default function ManualDetailPage() {
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-neutral-400">카테고리</label>
             <div className="flex gap-2">
-              {(['레시피', '청소', '오픈마감'] as Category[]).map((cat) => (
+              {(['운영', '레시피', '청소'] as Category[]).map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setEditCategory(cat)}

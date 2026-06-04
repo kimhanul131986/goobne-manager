@@ -8,7 +8,7 @@ import { useStore } from '@/lib/store-context'
 // ──────────────────────────────────────────
 // 타입
 // ──────────────────────────────────────────
-type Category = '레시피' | '청소' | '오픈마감'
+type Category = '운영' | '레시피' | '청소'
 
 interface Manual {
   id: string
@@ -25,8 +25,8 @@ function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse rounded-lg bg-neutral-800 ${className ?? ''}`} />
 }
 
-const TABS: Category[] = ['레시피', '청소', '오픈마감']
-const TAB_ICON: Record<Category, string> = { 레시피: '🍗', 청소: '🧹', 오픈마감: '🔑' }
+const TABS: Category[] = ['운영', '레시피', '청소']
+const TAB_ICON: Record<Category, string> = { 운영: '🖥️', 레시피: '🍗', 청소: '🧹' }
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('ko-KR', {
@@ -41,7 +41,7 @@ export default function ManualsPage() {
   const { store } = useStore()
   const [manuals, setManuals] = useState<Manual[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<Category>('레시피')
+  const [activeTab, setActiveTab] = useState<Category>('운영')
   const [query, setQuery] = useState('')
   const [role, setRole] = useState('')
   const [storeId, setStoreId] = useState('')
