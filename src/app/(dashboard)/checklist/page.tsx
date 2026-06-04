@@ -7,7 +7,7 @@ import { useStore } from '@/lib/store-context'
 // ──────────────────────────────────────────
 // 타입
 // ──────────────────────────────────────────
-type Category = '매일' | '오픈체크' | '마감체크'
+type Category = '매일' | '오픈' | '마감'
 
 interface CheckItem {
   id: string
@@ -33,12 +33,12 @@ function ymd(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
-const TABS: Category[] = ['매일', '오픈체크', '마감체크']
+const TABS: Category[] = ['매일', '오픈', '마감']
 
 const TAB_ICON: Record<Category, string> = {
   매일: '📋',
-  오픈체크: '🌅',
-  마감체크: '🌙',
+  오픈: '🌅',
+  마감: '🌙',
 }
 
 // ──────────────────────────────────────────
@@ -48,7 +48,7 @@ export default function ChecklistPage() {
   const { store } = useStore()
   const [activeTab, setActiveTab] = useState<Category>('매일')
   const [items, setItems] = useState<Record<Category, CheckItem[]>>({
-    매일: [], 오픈체크: [], 마감체크: [],
+    매일: [], 오픈: [], 마감: [],
   })
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState('')
@@ -112,7 +112,7 @@ export default function ChecklistPage() {
       ])
     )
 
-    const grouped: Record<Category, CheckItem[]> = { 매일: [], 오픈체크: [], 마감체크: [] }
+    const grouped: Record<Category, CheckItem[]> = { 매일: [], 오픈: [], 마감: [] }
 
     for (const t of templates ?? []) {
       const cat = t.category as Category
