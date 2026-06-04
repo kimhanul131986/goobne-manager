@@ -21,7 +21,22 @@ const NAV_ITEMS = [
   { href: '/staff',      label: '직원',       icon: '👥' },
 ]
 
-const TAB_ITEMS = NAV_ITEMS.slice(0, 5)
+// 바텀탭: 매일 쓰는 4개
+const TAB_ITEMS = [
+  { href: '/dashboard',  label: '홈',         icon: '🏠' },
+  { href: '/notices',    label: '공지',       icon: '📢' },
+  { href: '/checklist',  label: '체크리스트', icon: '📋' },
+  { href: '/handover',   label: '인수인계',   icon: '🔄' },
+]
+
+// 더보기 시트: 나머지
+const MORE_ITEMS = [
+  { href: '/schedule',   label: '스케줄',     icon: '📅' },
+  { href: '/orders',     label: '발주',       icon: '📦' },
+  { href: '/manuals',    label: '매뉴얼',     icon: '📖' },
+  { href: '/incidents',  label: '이슈신고',   icon: '⚠️' },
+  { href: '/staff',      label: '직원',       icon: '👥' },
+]
 
 // ──────────────────────────────────────────
 // 테마 정의
@@ -190,20 +205,12 @@ function InnerLayout({ profile, onLogout, children }: {
               </p>
               <p className="text-[10px] text-neutral-500">{store?.name ?? ''} 매장관리</p>
             </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setMenuOpen(true)}
-                className={`text-xs text-neutral-300 ${t.btnBg} rounded-lg px-3 py-1.5 active:scale-95 transition-transform`}
-              >
-                ☰ 메뉴
-              </button>
-              <button
-                onClick={onLogout}
-                className={`text-xs text-neutral-400 ${t.btnBg} rounded-lg px-3 py-1.5 active:scale-95 transition-transform`}
-              >
-                로그아웃
-              </button>
-            </div>
+            <button
+              onClick={onLogout}
+              className={`text-xs text-neutral-400 ${t.btnBg} rounded-lg px-3 py-1.5 active:scale-95 transition-transform`}
+            >
+              로그아웃
+            </button>
           </div>
         </header>
 
@@ -247,6 +254,18 @@ function InnerLayout({ profile, onLogout, children }: {
             </Link>
           )
         })}
+        {/* 더보기 */}
+        <button
+          onClick={() => setMenuOpen(true)}
+          className={`
+            flex-1 flex flex-col items-center justify-center py-2 gap-0.5
+            text-[10px] font-medium transition-colors
+            ${menuOpen || MORE_ITEMS.some(i => pathname.startsWith(i.href)) ? 'text-[#E8001D]' : 'text-neutral-500'}
+          `}
+        >
+          <span className="text-xl leading-none">☰</span>
+          더보기
+        </button>
       </nav>
 
       {/* ── 모바일 전체 메뉴 시트 ── */}
@@ -255,15 +274,12 @@ function InnerLayout({ profile, onLogout, children }: {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
           <div className={`relative w-full ${t.mobileBg} rounded-t-3xl border-t ${t.border} p-5 z-10 max-h-[80vh] overflow-y-auto`}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-bold text-white">전체 메뉴</p>
+              <p className="text-sm font-bold text-white">더보기</p>
               <button onClick={() => setMenuOpen(false)} className="text-neutral-500 text-lg px-2">✕</button>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {NAV_ITEMS.map((item) => {
-                const isActive =
-                  item.href === '/dashboard'
-                    ? pathname === '/dashboard'
-                    : pathname.startsWith(item.href)
+              {MORE_ITEMS.map((item) => {
+                const isActive = pathname.startsWith(item.href)
                 return (
                   <Link
                     key={item.href}

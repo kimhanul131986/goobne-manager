@@ -315,27 +315,6 @@ export default function DashboardPage() {
         )}
       </button>
 
-      {/* 빠른 메뉴 */}
-      <div className="bg-neutral-900 rounded-2xl p-5 border border-neutral-800">
-        <p className="text-xs text-neutral-500 mb-3">빠른 이동</p>
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { href: '/orders',  icon: '📦', label: '발주' },
-            { href: '/manuals', icon: '📖', label: '매뉴얼' },
-            { href: '/handover', icon: '🔄', label: '인수인계' },
-            { href: '/staff', icon: '👥', label: '직원' },
-          ].map((item) => (
-            <button
-              key={item.href}
-              onClick={() => router.push(item.href)}
-              className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 active:scale-95 transition-all"
-            >
-              <span className="text-xl">{item.icon}</span>
-              <span className="text-[10px] text-neutral-400">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }
