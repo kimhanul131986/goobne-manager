@@ -57,29 +57,38 @@ export async function POST(req: NextRequest) {
 
     const list = (data ?? []) as any[]
 
-    // 1) raw 탭 (평평한 원본)
-    const header = ['날짜', '요일', '직원', '출근', '퇴근', '시간', '확정']
-    const rows = list.map((s) => {
-      const start = String(s.start_time).slice(0, 5)
-      const end = String(s.end_time).slice(0, 5)
-      const dow = DOW[new Date(s.work_date + 'T00:00:00').getDay()]
-      return [
-        s.work_date,
-        dow,
-        s.profiles?.name ?? '?',
-        start,
-        end,
-        workHours(s.start_time, s.end_time),
-        s.is_confirmed ? 'Y' : 'N',
-      ]
-    })
+    // 현재 월 필터 (월간·인건비 탭용)
+    const now = new Date()
+    const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const monthList = list.filter((s) => String(s.work_date).startsWith(currentYM))
 
-    // 2) 월간 격자 탭 (세로=날짜, 가로=직원)
-    const names = Array.from(new Set(list.map((s) => s.profiles?.name ?? '?'))).sort((a, b) => a.localeCompare(b, 'ko'))
-    const dates = Array.from(new Set(list.map((s) => s.work_date))).sort()
+    // 1) raw 탭 — 전체 누적, 월별 구분 행 삽입
+    const rawColHeader = ['날짜', '요일', '직원', '출근', '퇴근', '시간', '확정']
+    const monthMap = new Map<string, any[]>()
+    for (const s of list) {
+      const ym = String(s.work_date).slice(0, 7)
+      if (!monthMap.has(ym)) monthMap.set(ym, [])
+      monthMap.get(ym)!.push(s)
+    }
+    const rawRows: (string | number)[][] = [rawColHeader]
+    const monthHeaderRows: number[] = []
+    for (const [ym, mList] of Array.from(monthMap.entries()).sort()) {
+      const [y, m] = ym.split('-')
+      monthHeaderRows.push(rawRows.length)
+      rawRows.push([`${y}년 ${Number(m)}월`, '', '', '', '', '', ''])
+      for (const s of mList) {
+        const start = String(s.start_time).slice(0, 5)
+        const end = String(s.end_time).slice(0, 5)
+        rawRows.push([s.work_date, DOW[new Date(s.work_date + 'T00:00:00').getDay()], s.profiles?.name ?? '?', start, end, workHours(s.start_time, s.end_time), s.is_confirmed ? 'Y' : 'N'])
+      }
+    }
+
+    // 2) 월간 격자 탭 — 이번 달만
+    const names = Array.from(new Set(monthList.map((s) => s.profiles?.name ?? '?'))).sort((a, b) => a.localeCompare(b, 'ko'))
+    const dates = Array.from(new Set(monthList.map((s) => s.work_date))).sort()
     const cellMap = new Map<string, string>()
     const hourMap = new Map<string, number>()
-    for (const s of list) {
+    for (const s of monthList) {
       const nm = s.profiles?.name ?? '?'
       const range = compactRange(String(s.start_time).slice(0, 5), String(s.end_time).slice(0, 5))
       cellMap.set(`${s.work_date}|${nm}`, range)
@@ -114,8 +123,8 @@ export async function POST(req: NextRequest) {
       return { dataRows, sGross, sDeduct, sNet }
     }
 
-    const adminNames = names.filter((n) => !(list.find((s) => (s.profiles?.name ?? '?') === n)?.profiles?.tax_deduct ?? false))
-    const staffNames = names.filter((n) =>   list.find((s) => (s.profiles?.name ?? '?') === n)?.profiles?.tax_deduct ?? false)
+    const adminNames = names.filter((n) => !(monthList.find((s) => (s.profiles?.name ?? '?') === n)?.profiles?.tax_deduct ?? false))
+    const staffNames = names.filter((n) =>   monthList.find((s) => (s.profiles?.name ?? '?') === n)?.profiles?.tax_deduct ?? false)
 
     const admin = buildSection(adminNames)
     const staff = buildSection(staffNames)
@@ -154,7 +163,7 @@ export async function POST(req: NextRequest) {
     meta.totalRowIdx = payroll.length
     payroll.push(['전체 합계', '', '', `${fmt(totalGross)}원`, `${fmt(totalDeduct)}원`, `${fmt(totalNet)}원`])
 
-    await writeRawSheet(spreadsheetId, [header, ...rows])
+    await writeRawSheet(spreadsheetId, rawRows, monthHeaderRows)
     await writeGridSheet(spreadsheetId, grid)
     await writePayrollSheet(spreadsheetId, payroll, meta)
 

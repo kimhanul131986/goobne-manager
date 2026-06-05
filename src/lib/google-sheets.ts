@@ -164,10 +164,52 @@ async function formatPayroll(sheets: any, spreadsheetId: string, sheetId: number
   await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests } })
 }
 
-// raw 탭 덮어쓰기 (멱등)
-export async function writeRawSheet(spreadsheetId: string, rows: (string | number)[][]) {
+// raw 탭 서식 (월별 색상 구분)
+async function formatRaw(sheets: any, spreadsheetId: string, sheetId: number, rowCount: number, colCount: number, monthHeaderRows: number[]) {
+  if (rowCount < 1) return
+  const border = { style: 'SOLID', color: RGB(200, 200, 200) }
+  const thickBorder = { style: 'SOLID_MEDIUM', color: RGB(120, 120, 120) }
+  const monthBg = [RGB(240, 245, 255), RGB(255, 255, 255)] // 홀짝 월 배경색
+
+  const requests: any[] = [
+    // 전체 기본 서식
+    { repeatCell: { range: { sheetId, startRowIndex: 0, endRowIndex: rowCount, startColumnIndex: 0, endColumnIndex: colCount }, cell: { userEnteredFormat: { horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE', textFormat: { fontSize: 10 } } }, fields: 'userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat)' } },
+    // 헤더 행 — 브랜드 레드
+    { repeatCell: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: colCount }, cell: { userEnteredFormat: { backgroundColor: RGB(232, 0, 29), textFormat: { bold: true, fontSize: 10, foregroundColor: RGB(255, 255, 255) } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } },
+    // 전체 안쪽 얇은 테두리
+    { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: rowCount, startColumnIndex: 0, endColumnIndex: colCount }, innerHorizontal: border, innerVertical: border, top: thickBorder, bottom: thickBorder, left: thickBorder, right: thickBorder } },
+    // 열 너비
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 100 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 1, endIndex: colCount }, properties: { pixelSize: 72 }, fields: 'pixelSize' } },
+  ]
+
+  // 월 구분 헤더 행 + 데이터 행 배경색
+  for (let mi = 0; mi < monthHeaderRows.length; mi++) {
+    const mStart = monthHeaderRows[mi]
+    const mEnd = mi + 1 < monthHeaderRows.length ? monthHeaderRows[mi + 1] : rowCount
+    const bg = monthBg[mi % 2]
+
+    // 월 레이블 행 — 진회색
+    requests.push({ repeatCell: { range: { sheetId, startRowIndex: mStart, endRowIndex: mStart + 1, startColumnIndex: 0, endColumnIndex: colCount }, cell: { userEnteredFormat: { backgroundColor: RGB(80, 80, 80), textFormat: { bold: true, fontSize: 10, foregroundColor: RGB(255, 255, 255) } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+    // 월 경계 위 굵은 선
+    requests.push({ updateBorders: { range: { sheetId, startRowIndex: mStart, endRowIndex: mStart + 1, startColumnIndex: 0, endColumnIndex: colCount }, top: thickBorder } })
+    // 데이터 행 배경색
+    if (mStart + 1 < mEnd) {
+      requests.push({ repeatCell: { range: { sheetId, startRowIndex: mStart + 1, endRowIndex: mEnd, startColumnIndex: 0, endColumnIndex: colCount }, cell: { userEnteredFormat: { backgroundColor: bg } }, fields: 'userEnteredFormat.backgroundColor' } })
+    }
+  }
+
+  // 틀 고정: 헤더 1행
+  requests.push({ updateSheetProperties: { properties: { sheetId, gridProperties: { frozenRowCount: 1 } }, fields: 'gridProperties.frozenRowCount' } })
+
+  await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests } })
+}
+
+// raw 탭 덮어쓰기 + 월별 서식
+export async function writeRawSheet(spreadsheetId: string, rows: (string | number)[][], monthHeaderRows: number[]) {
   const sheets = google.sheets({ version: 'v4', auth: getAuth() })
-  await writeTab(sheets, spreadsheetId, RAW_TAB, rows)
+  const sheetId = await writeTab(sheets, spreadsheetId, RAW_TAB, rows)
+  await formatRaw(sheets, spreadsheetId, sheetId, rows.length, rows[0]?.length ?? 0, monthHeaderRows)
 }
 
 // 월간 격자 탭 덮어쓰기 + 서식 (직원×날짜)
