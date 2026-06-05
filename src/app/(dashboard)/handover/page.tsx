@@ -7,7 +7,7 @@ import { useStore } from '@/lib/store-context'
 // ──────────────────────────────────────────
 // 타입
 // ──────────────────────────────────────────
-type Shift = '오픈' | '미들' | '마감'
+type Shift = '오픈' | '마감' | '기타'
 
 interface Handover {
   id: string
@@ -25,12 +25,12 @@ function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse rounded-lg bg-neutral-800 ${className ?? ''}`} />
 }
 
-const SHIFTS: Shift[] = ['오픈', '미들', '마감']
+const SHIFTS: Shift[] = ['오픈', '마감', '기타']
 
 const SHIFT_STYLE: Record<Shift, { bg: string; text: string; border: string }> = {
   오픈:  { bg: 'bg-sky-500/15',    text: 'text-sky-400',    border: 'border-sky-500/30' },
-  미들:  { bg: 'bg-yellow-500/15', text: 'text-yellow-400', border: 'border-yellow-500/30' },
   마감:  { bg: 'bg-purple-500/15', text: 'text-purple-400', border: 'border-purple-500/30' },
+  기타:  { bg: 'bg-yellow-500/15', text: 'text-yellow-400', border: 'border-yellow-500/30' },
 }
 
 function formatDateHeader(iso: string): string {

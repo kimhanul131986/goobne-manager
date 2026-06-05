@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getSheetIdForStore, writeRawSheet, writeGridSheet } from '@/lib/google-sheets'
+import { getSheetIdForStore, writeRawSheet, writeGridSheet, writePayrollSheet } from '@/lib/google-sheets'
 
 export const runtime = 'nodejs'
 
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabaseAdmin
       .from('schedules')
-      .select('work_date, start_time, end_time, is_confirmed, profiles(name)')
+      .select('work_date, start_time, end_time, is_confirmed, profiles(name, hourly_rate, tax_deduct)')
       .eq('store_id', storeId)
       .order('work_date', { ascending: true })
       .order('start_time', { ascending: true })
@@ -93,9 +93,39 @@ export async function POST(req: NextRequest) {
     const totalRow = ['총시간', '', ...names.map((n) => hourMap.get(n) ?? 0)]
     const grid = [gridHeader, ...gridRows, totalRow]
 
+    // 3) 인건비 탭 (직원별 총시간·시급·공제·최종 인건비)
+    const fmt = (n: number) => Math.round(n).toLocaleString('ko-KR')
+    const payrollHeader = ['직원', '총 근무시간', '시급', '총 금액', '공제(3.3%)', '최종 인건비']
+    let totalGross = 0
+    let totalDeduct = 0
+    let totalNet = 0
+    const payrollRows = names.map((name) => {
+      const totalH = hourMap.get(name) ?? 0
+      const profile = list.find((s) => (s.profiles?.name ?? '?') === name)?.profiles
+      const rate = profile?.hourly_rate ?? 11000
+      const taxDeduct = profile?.tax_deduct ?? false
+      const gross = Math.round(totalH * rate)
+      const deduct = taxDeduct ? Math.round(gross * 0.033) : 0
+      const net = gross - deduct
+      totalGross += gross
+      totalDeduct += deduct
+      totalNet += net
+      return [
+        name,
+        `${totalH}h`,
+        `${fmt(rate)}원`,
+        `${fmt(gross)}원`,
+        taxDeduct ? `${fmt(deduct)}원` : '-',
+        `${fmt(net)}원`,
+      ]
+    })
+    const payrollTotalRow = ['합계', '', '', `${fmt(totalGross)}원`, `${fmt(totalDeduct)}원`, `${fmt(totalNet)}원`]
+    const payroll = [payrollHeader, ...payrollRows, payrollTotalRow]
+
     await Promise.all([
       writeRawSheet(spreadsheetId, [header, ...rows]),
       writeGridSheet(spreadsheetId, grid),
+      writePayrollSheet(spreadsheetId, payroll),
     ])
 
     return NextResponse.json({ ok: true, count: rows.length })
