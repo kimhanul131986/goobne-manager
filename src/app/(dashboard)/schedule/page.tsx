@@ -582,14 +582,21 @@ export default function SchedulePage() {
     fetchSchedules(monthStart, storeId)
   }, [monthStart, storeId, fetchSchedules])
 
-  // 구글 시트로 단방향 내보내기 (fire-and-forget)
+  // 구글 시트로 단방향 내보내기
   function syncSheet() {
     if (!storeId) return
     fetch('/api/sync-schedule', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storeId }),
-    }).catch(() => {})
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          console.error('[sync-schedule] 실패:', body?.error ?? res.status)
+        }
+      })
+      .catch((e) => console.error('[sync-schedule] 네트워크 오류:', e))
   }
 
   function refreshAfterEdit() {

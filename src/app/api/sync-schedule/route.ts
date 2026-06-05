@@ -122,11 +122,9 @@ export async function POST(req: NextRequest) {
     const payrollTotalRow = ['합계', '', '', `${fmt(totalGross)}원`, `${fmt(totalDeduct)}원`, `${fmt(totalNet)}원`]
     const payroll = [payrollHeader, ...payrollRows, payrollTotalRow]
 
-    await Promise.all([
-      writeRawSheet(spreadsheetId, [header, ...rows]),
-      writeGridSheet(spreadsheetId, grid),
-      writePayrollSheet(spreadsheetId, payroll),
-    ])
+    await writeRawSheet(spreadsheetId, [header, ...rows])
+    await writeGridSheet(spreadsheetId, grid)
+    await writePayrollSheet(spreadsheetId, payroll)
 
     return NextResponse.json({ ok: true, count: rows.length })
   } catch (e: any) {
