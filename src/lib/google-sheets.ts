@@ -117,48 +117,50 @@ export interface PayrollMeta {
 async function formatPayroll(sheets: any, spreadsheetId: string, sheetId: number, rowCount: number, meta: PayrollMeta) {
   if (rowCount < 1 || meta.colCount < 1) return
   const C = meta.colCount
+  const WHITE = RGB(255, 255, 255)
+  const border = { style: 'SOLID', color: RGB(200, 200, 200) }
+  const thickBorder = { style: 'SOLID_MEDIUM', color: RGB(150, 150, 150) }
+
   const requests: any[] = [
-    // 전체 가운데 정렬
+    // ① 서식 전체 초기화 (이전 실행 잔여 서식 제거)
+    { repeatCell: { range: { sheetId, startRowIndex: 0, endRowIndex: 200, startColumnIndex: 0, endColumnIndex: 10 }, cell: { userEnteredFormat: { backgroundColor: WHITE, textFormat: { bold: false, foregroundColor: RGB(0, 0, 0), fontSize: 10 } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } },
+    // ② 전체 가운데 정렬
     { repeatCell: { range: { sheetId, startRowIndex: 0, endRowIndex: rowCount, startColumnIndex: 0, endColumnIndex: C }, cell: { userEnteredFormat: { horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE', textFormat: { fontSize: 10 } } }, fields: 'userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat)' } },
-    // 열 너비
+    // ③ 전체 테두리
+    { updateBorders: { range: { sheetId, startRowIndex: 0, endRowIndex: rowCount, startColumnIndex: 0, endColumnIndex: C }, innerHorizontal: border, innerVertical: border, top: thickBorder, bottom: thickBorder, left: thickBorder, right: thickBorder } },
+    // ④ 열 너비
     { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 110 }, fields: 'pixelSize' } },
-    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 1, endIndex: C }, properties: { pixelSize: 115 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 1, endIndex: C }, properties: { pixelSize: 120 }, fields: 'pixelSize' } },
+    // ⑤ 틀 고정
+    { updateSheetProperties: { properties: { sheetId, gridProperties: { frozenRowCount: 0 } }, fields: 'gridProperties.frozenRowCount' } },
   ]
 
-  // 섹션 레이블 행 — 진한 회색 배경 + 흰 굵은 글씨
+  // 섹션 레이블 행 — 진회색 + 흰 굵은 글씨
   for (const r of meta.sectionHeaderRows) {
-    requests.push({ repeatCell: { range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: C }, cell: { userEnteredFormat: { backgroundColor: RGB(66, 66, 66), textFormat: { bold: true, fontSize: 11, foregroundColor: RGB(255, 255, 255) } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+    requests.push({ repeatCell: { range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: C }, cell: { userEnteredFormat: { backgroundColor: RGB(66, 66, 66), textFormat: { bold: true, fontSize: 11, foregroundColor: WHITE } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
   }
 
-  // 컬럼 헤더 행 — 브랜드 레드
+  // 컬럼 헤더 행 — 브랜드 레드 + 흰 굵은 글씨
   for (const r of meta.colHeaderRows) {
-    requests.push({ repeatCell: { range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: C }, cell: { userEnteredFormat: { backgroundColor: RGB(232, 0, 29), textFormat: { bold: true, fontSize: 10, foregroundColor: RGB(255, 255, 255) } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+    requests.push({ repeatCell: { range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: C }, cell: { userEnteredFormat: { backgroundColor: RGB(232, 0, 29), textFormat: { bold: true, fontSize: 10, foregroundColor: WHITE } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
   }
 
-  // 소계 행 — 연한 하늘 + 굵게
+  // 데이터 행 — 흰 배경, 직원명 열만 연회색
+  for (let i = 0; i < rowCount; i++) {
+    if (meta.sectionHeaderRows.includes(i) || meta.colHeaderRows.includes(i) || meta.subtotalRows.includes(i) || i === meta.totalRowIdx) continue
+    requests.push({ repeatCell: { range: { sheetId, startRowIndex: i, endRowIndex: i + 1, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { backgroundColor: RGB(245, 245, 245), textFormat: { bold: true, fontSize: 10 } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+  }
+
+  // 소계 행 — 연한 회색 + 굵게
   for (const r of meta.subtotalRows) {
-    requests.push({ repeatCell: { range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: C }, cell: { userEnteredFormat: { backgroundColor: RGB(219, 234, 254), textFormat: { bold: true, fontSize: 10 } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+    requests.push({ repeatCell: { range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: C }, cell: { userEnteredFormat: { backgroundColor: RGB(230, 230, 230), textFormat: { bold: true, fontSize: 10 } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+    requests.push({ updateBorders: { range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: C }, top: thickBorder, bottom: thickBorder } })
   }
 
   // 전체 합계 행 — 연한 주황 + 굵게
   if (meta.totalRowIdx >= 0) {
     requests.push({ repeatCell: { range: { sheetId, startRowIndex: meta.totalRowIdx, endRowIndex: meta.totalRowIdx + 1, startColumnIndex: 0, endColumnIndex: C }, cell: { userEnteredFormat: { backgroundColor: RGB(253, 236, 210), textFormat: { bold: true, fontSize: 10 } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
-  }
-
-  // 데이터 행 직원명 열 — 연회색
-  const dataRanges = []
-  for (let i = 0; i < rowCount; i++) {
-    if (
-      !meta.sectionHeaderRows.includes(i) &&
-      !meta.colHeaderRows.includes(i) &&
-      !meta.subtotalRows.includes(i) &&
-      i !== meta.totalRowIdx
-    ) {
-      dataRanges.push(i)
-    }
-  }
-  for (const r of dataRanges) {
-    requests.push({ repeatCell: { range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { backgroundColor: RGB(243, 243, 243), textFormat: { bold: true } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+    requests.push({ updateBorders: { range: { sheetId, startRowIndex: meta.totalRowIdx, endRowIndex: meta.totalRowIdx + 1, startColumnIndex: 0, endColumnIndex: C }, top: thickBorder, bottom: thickBorder } })
   }
 
   await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests } })
