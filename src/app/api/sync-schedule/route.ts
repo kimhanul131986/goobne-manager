@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getSheetIdForStore, writeRawSheet, writeGridSheet, writePayrollSheet } from '@/lib/google-sheets'
+import { getSheetIdForStore, writeRawSheet, writeGridSheet, writePayrollSheet, PayrollMeta } from '@/lib/google-sheets'
 
 export const runtime = 'nodejs'
 
@@ -93,38 +93,70 @@ export async function POST(req: NextRequest) {
     const totalRow = ['총시간', '', ...names.map((n) => hourMap.get(n) ?? 0)]
     const grid = [gridHeader, ...gridRows, totalRow]
 
-    // 3) 인건비 탭 (직원별 총시간·시급·공제·최종 인건비)
+    // 3) 인건비 탭 — 관리자 / 직원 섹션 분리
     const fmt = (n: number) => Math.round(n).toLocaleString('ko-KR')
-    const payrollHeader = ['직원', '총 근무시간', '시급', '총 금액', '공제(3.3%)', '최종 인건비']
-    let totalGross = 0
-    let totalDeduct = 0
-    let totalNet = 0
-    const payrollRows = names.map((name) => {
-      const totalH = hourMap.get(name) ?? 0
-      const profile = list.find((s) => (s.profiles?.name ?? '?') === name)?.profiles
-      const rate = profile?.hourly_rate ?? 11000
-      const taxDeduct = profile?.tax_deduct ?? false
-      const gross = Math.round(totalH * rate)
-      const deduct = taxDeduct ? Math.round(gross * 0.033) : 0
-      const net = gross - deduct
-      totalGross += gross
-      totalDeduct += deduct
-      totalNet += net
-      return [
-        name,
-        `${totalH}h`,
-        `${fmt(rate)}원`,
-        `${fmt(gross)}원`,
-        taxDeduct ? `${fmt(deduct)}원` : '-',
-        `${fmt(net)}원`,
-      ]
-    })
-    const payrollTotalRow = ['합계', '', '', `${fmt(totalGross)}원`, `${fmt(totalDeduct)}원`, `${fmt(totalNet)}원`]
-    const payroll = [payrollHeader, ...payrollRows, payrollTotalRow]
+    const COL_HEADER = ['직원', '총 근무시간', '시급', '총 금액', '공제(3.3%)', '최종 인건비']
+    const COL = COL_HEADER.length
+
+    function buildSection(nameList: string[]) {
+      let sGross = 0, sDeduct = 0, sNet = 0
+      const dataRows = nameList.map((name) => {
+        const totalH = hourMap.get(name) ?? 0
+        const profile = list.find((s) => (s.profiles?.name ?? '?') === name)?.profiles
+        const rate: number = profile?.hourly_rate ?? 11000
+        const taxDeduct: boolean = profile?.tax_deduct ?? false
+        const gross = Math.round(totalH * rate)
+        const deduct = taxDeduct ? Math.round(gross * 0.033) : 0
+        const net = gross - deduct
+        sGross += gross; sDeduct += deduct; sNet += net
+        return [name, `${totalH}h`, `${fmt(rate)}원`, `${fmt(gross)}원`, taxDeduct ? `${fmt(deduct)}원` : '-', `${fmt(net)}원`]
+      })
+      return { dataRows, sGross, sDeduct, sNet }
+    }
+
+    const adminNames = names.filter((n) => !(list.find((s) => (s.profiles?.name ?? '?') === n)?.profiles?.tax_deduct ?? false))
+    const staffNames = names.filter((n) =>   list.find((s) => (s.profiles?.name ?? '?') === n)?.profiles?.tax_deduct ?? false)
+
+    const admin = buildSection(adminNames)
+    const staff = buildSection(staffNames)
+    const totalGross = admin.sGross + staff.sGross
+    const totalDeduct = admin.sDeduct + staff.sDeduct
+    const totalNet = admin.sNet + staff.sNet
+
+    const payroll: (string | number)[][] = []
+    const meta: PayrollMeta = { colCount: COL, sectionHeaderRows: [], colHeaderRows: [], subtotalRows: [], totalRowIdx: -1 }
+
+    // 관리자 섹션
+    meta.sectionHeaderRows.push(payroll.length)
+    payroll.push(['▶ 관리자 (세금 없음)', '', '', '', '', ''])
+    meta.colHeaderRows.push(payroll.length)
+    payroll.push(COL_HEADER)
+    payroll.push(...admin.dataRows)
+    meta.subtotalRows.push(payroll.length)
+    payroll.push(['소계', '', '', `${fmt(admin.sGross)}원`, '-', `${fmt(admin.sNet)}원`])
+
+    // 빈 행 구분
+    payroll.push(['', '', '', '', '', ''])
+
+    // 직원 섹션
+    meta.sectionHeaderRows.push(payroll.length)
+    payroll.push(['▶ 직원 (3.3% 공제)', '', '', '', '', ''])
+    meta.colHeaderRows.push(payroll.length)
+    payroll.push(COL_HEADER)
+    payroll.push(...staff.dataRows)
+    meta.subtotalRows.push(payroll.length)
+    payroll.push(['소계', '', '', `${fmt(staff.sGross)}원`, `${fmt(staff.sDeduct)}원`, `${fmt(staff.sNet)}원`])
+
+    // 빈 행 구분
+    payroll.push(['', '', '', '', '', ''])
+
+    // 전체 합계
+    meta.totalRowIdx = payroll.length
+    payroll.push(['전체 합계', '', '', `${fmt(totalGross)}원`, `${fmt(totalDeduct)}원`, `${fmt(totalNet)}원`])
 
     await writeRawSheet(spreadsheetId, [header, ...rows])
     await writeGridSheet(spreadsheetId, grid)
-    await writePayrollSheet(spreadsheetId, payroll)
+    await writePayrollSheet(spreadsheetId, payroll, meta)
 
     return NextResponse.json({ ok: true, count: rows.length })
   } catch (e: any) {

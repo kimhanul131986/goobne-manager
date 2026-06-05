@@ -105,33 +105,61 @@ async function formatGrid(sheets: any, spreadsheetId: string, sheetId: number, r
   await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests } })
 }
 
+export interface PayrollMeta {
+  colCount: number
+  sectionHeaderRows: number[]  // 관리자 / 직원 구분 레이블 행
+  colHeaderRows: number[]      // 컬럼 헤더 행 (빨강)
+  subtotalRows: number[]       // 소계 행
+  totalRowIdx: number          // 전체 합계 행
+}
+
 // 인건비 탭 서식
-async function formatPayroll(sheets: any, spreadsheetId: string, sheetId: number, rowCount: number, colCount: number) {
-  if (rowCount < 1 || colCount < 1) return
-
-  const all = { sheetId, startRowIndex: 0, endRowIndex: rowCount, startColumnIndex: 0, endColumnIndex: colCount }
-  const border = { style: 'SOLID', color: RGB(190, 190, 190) }
-  const outer = { style: 'SOLID_MEDIUM', color: RGB(120, 120, 120) }
-
+async function formatPayroll(sheets: any, spreadsheetId: string, sheetId: number, rowCount: number, meta: PayrollMeta) {
+  if (rowCount < 1 || meta.colCount < 1) return
+  const C = meta.colCount
   const requests: any[] = [
     // 전체 가운데 정렬
-    { repeatCell: { range: all, cell: { userEnteredFormat: { horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE', textFormat: { fontSize: 10 } } }, fields: 'userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat)' } },
-    // 헤더 행 — 브랜드 레드
-    { repeatCell: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: colCount }, cell: { userEnteredFormat: { backgroundColor: RGB(232, 0, 29), textFormat: { bold: true, fontSize: 10, foregroundColor: RGB(255, 255, 255) } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } },
-    // 직원명 열 — 연회색
-    { repeatCell: { range: { sheetId, startRowIndex: 1, endRowIndex: rowCount - 1, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { backgroundColor: RGB(243, 243, 243), textFormat: { bold: true, fontSize: 10 } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } },
-    // 합계 행 — 연한 주황 + 굵게
-    { repeatCell: { range: { sheetId, startRowIndex: rowCount - 1, endRowIndex: rowCount, startColumnIndex: 0, endColumnIndex: colCount }, cell: { userEnteredFormat: { backgroundColor: RGB(253, 236, 210), textFormat: { bold: true, fontSize: 10 } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } },
-    // 안쪽 테두리
-    { updateBorders: { range: all, innerHorizontal: border, innerVertical: border } },
-    // 바깥 테두리
-    { updateBorders: { range: all, top: outer, bottom: outer, left: outer, right: outer } },
-    // 틀 고정: 헤더 1행
-    { updateSheetProperties: { properties: { sheetId, gridProperties: { frozenRowCount: 1, frozenColumnCount: 0 } }, fields: 'gridProperties(frozenRowCount,frozenColumnCount)' } },
+    { repeatCell: { range: { sheetId, startRowIndex: 0, endRowIndex: rowCount, startColumnIndex: 0, endColumnIndex: C }, cell: { userEnteredFormat: { horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE', textFormat: { fontSize: 10 } } }, fields: 'userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat)' } },
     // 열 너비
-    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 100 }, fields: 'pixelSize' } },
-    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 1, endIndex: colCount }, properties: { pixelSize: 110 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 110 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 1, endIndex: C }, properties: { pixelSize: 115 }, fields: 'pixelSize' } },
   ]
+
+  // 섹션 레이블 행 — 진한 회색 배경 + 흰 굵은 글씨
+  for (const r of meta.sectionHeaderRows) {
+    requests.push({ repeatCell: { range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: C }, cell: { userEnteredFormat: { backgroundColor: RGB(66, 66, 66), textFormat: { bold: true, fontSize: 11, foregroundColor: RGB(255, 255, 255) } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+  }
+
+  // 컬럼 헤더 행 — 브랜드 레드
+  for (const r of meta.colHeaderRows) {
+    requests.push({ repeatCell: { range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: C }, cell: { userEnteredFormat: { backgroundColor: RGB(232, 0, 29), textFormat: { bold: true, fontSize: 10, foregroundColor: RGB(255, 255, 255) } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+  }
+
+  // 소계 행 — 연한 하늘 + 굵게
+  for (const r of meta.subtotalRows) {
+    requests.push({ repeatCell: { range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: C }, cell: { userEnteredFormat: { backgroundColor: RGB(219, 234, 254), textFormat: { bold: true, fontSize: 10 } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+  }
+
+  // 전체 합계 행 — 연한 주황 + 굵게
+  if (meta.totalRowIdx >= 0) {
+    requests.push({ repeatCell: { range: { sheetId, startRowIndex: meta.totalRowIdx, endRowIndex: meta.totalRowIdx + 1, startColumnIndex: 0, endColumnIndex: C }, cell: { userEnteredFormat: { backgroundColor: RGB(253, 236, 210), textFormat: { bold: true, fontSize: 10 } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+  }
+
+  // 데이터 행 직원명 열 — 연회색
+  const dataRanges = []
+  for (let i = 0; i < rowCount; i++) {
+    if (
+      !meta.sectionHeaderRows.includes(i) &&
+      !meta.colHeaderRows.includes(i) &&
+      !meta.subtotalRows.includes(i) &&
+      i !== meta.totalRowIdx
+    ) {
+      dataRanges.push(i)
+    }
+  }
+  for (const r of dataRanges) {
+    requests.push({ repeatCell: { range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { backgroundColor: RGB(243, 243, 243), textFormat: { bold: true } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } })
+  }
 
   await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests } })
 }
@@ -150,8 +178,8 @@ export async function writeGridSheet(spreadsheetId: string, rows: (string | numb
 }
 
 // 인건비 탭 덮어쓰기 + 서식
-export async function writePayrollSheet(spreadsheetId: string, rows: (string | number)[][]) {
+export async function writePayrollSheet(spreadsheetId: string, rows: (string | number)[][], meta: PayrollMeta) {
   const sheets = google.sheets({ version: 'v4', auth: getAuth() })
   const sheetId = await writeTab(sheets, spreadsheetId, PAYROLL_TAB, rows)
-  await formatPayroll(sheets, spreadsheetId, sheetId, rows.length, rows[0]?.length ?? 0)
+  await formatPayroll(sheets, spreadsheetId, sheetId, rows.length, meta)
 }
