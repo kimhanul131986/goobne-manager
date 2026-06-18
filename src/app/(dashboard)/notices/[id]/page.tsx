@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { verifyPin } from '@/lib/verify-pin'
 
 interface NoticeDetail {
   id: string
@@ -61,6 +62,7 @@ export default function NoticeDetailPage() {
 
   async function handleDelete() {
     if (!window.confirm('공지를 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return
+    if (!verifyPin('삭제')) return
     setDeleting(true)
     await supabase.from('notice_checks').delete().eq('notice_id', id)
     await supabase.from('notices').delete().eq('id', id)

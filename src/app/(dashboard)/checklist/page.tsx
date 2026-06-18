@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useStore } from '@/lib/store-context'
+import { verifyPin } from '@/lib/verify-pin'
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -302,6 +303,7 @@ export default function ChecklistPage() {
 
   // ── 항목 삭제 (admin) ──
   async function handleDelete(templateId: string) {
+    if (!verifyPin('삭제')) return
     await supabase.from('checklist_templates').delete().eq('id', templateId)
     setItems((prev) => ({
       ...prev,

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
+import { verifyPin } from '@/lib/verify-pin'
 
 // ──────────────────────────────────────────
 // 타입
@@ -92,6 +93,7 @@ export default function ManualDetailPage() {
   // ── 편집 모드 진입 ──
   function enterEdit() {
     if (!manual) return
+    if (!verifyPin('수정')) return
     setEditTitle(manual.title)
     setEditContent(manual.content)
     setEditCategory(manual.category)
@@ -209,6 +211,7 @@ export default function ManualDetailPage() {
 
   async function handleDeleteDoc() {
     if (!window.confirm('매뉴얼을 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return
+    if (!verifyPin('삭제')) return
     setSaving(true)
     if (manual?.image_url) {
       const path = manual.image_url.split(`${STORAGE_BUCKET}/`)[1]

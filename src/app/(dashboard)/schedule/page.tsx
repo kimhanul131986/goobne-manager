@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { useStore } from '@/lib/store-context'
 import AddEmployeeModal from '@/components/AddEmployeeModal'
+import { verifyPin } from '@/lib/verify-pin'
 
 // ──────────────────────────────────────────
 // 타입
@@ -116,6 +117,7 @@ function CellModal({
 
   async function handleSave() {
     if (startTime === endTime) { setError('출근과 퇴근 시간이 같을 수 없습니다.'); return }
+    if (existing && !verifyPin('수정')) return
     setSaving(true); setError(null)
     if (existing) {
       const { error: err } = await supabase
@@ -140,6 +142,7 @@ function CellModal({
 
   async function handleDelete() {
     if (!existing) return
+    if (!verifyPin('삭제')) return
     setSaving(true)
     await supabase.from('schedules').delete().eq('id', existing.id)
     onSaved(); onClose()
@@ -147,6 +150,7 @@ function CellModal({
 
   async function handleConfirm() {
     if (!existing) return
+    if (!verifyPin('수정')) return
     setSaving(true)
     await supabase.from('schedules').update({ is_confirmed: !existing.is_confirmed }).eq('id', existing.id)
     onSaved(); onClose()

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useStore } from '@/lib/store-context'
+import { verifyPin } from '@/lib/verify-pin'
 
 // ──────────────────────────────────────────
 // 타입
@@ -85,6 +86,7 @@ function HandoverCard({ item, isMine, isAdmin, onDelete }: CardProps) {
 
   async function handleDelete() {
     if (!confirm('이 인수인계를 삭제하시겠습니까?')) return
+    if (!verifyPin('삭제')) return
     setDeleting(true)
     onDelete(item.id)
   }

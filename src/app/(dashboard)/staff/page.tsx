@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useStore } from '@/lib/store-context'
 import AddEmployeeModal from '@/components/AddEmployeeModal'
+import { verifyPin } from '@/lib/verify-pin'
 
 interface Employee {
   id: string
@@ -58,6 +59,7 @@ export default function StaffPage() {
 
   async function handleDelete(emp: Employee) {
     if (!confirm(`${emp.name} 직원을 삭제할까요?`)) return
+    if (!verifyPin('삭제')) return
     const res = await fetch('/api/admin/employees', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },

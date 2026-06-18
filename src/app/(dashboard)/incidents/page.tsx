@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useStore } from '@/lib/store-context'
+import { verifyPin } from '@/lib/verify-pin'
 
 // ──────────────────────────────────────────
 // 타입
@@ -241,6 +242,7 @@ export default function IncidentsPage() {
 
   // ── 해결 완료 (admin) ──
   async function handleResolve(id: string) {
+    if (!verifyPin('수정')) return
     await supabase
       .from('incidents')
       .update({ is_resolved: true })
@@ -254,6 +256,7 @@ export default function IncidentsPage() {
   // ── 삭제 (본인 미해결 건) ──
   async function handleDelete(id: string) {
     if (!confirm('이 이슈 신고를 삭제하시겠습니까?')) return
+    if (!verifyPin('삭제')) return
     await supabase.from('incidents').delete().eq('id', id)
     setIncidents((prev) => prev.filter((i) => i.id !== id))
   }
